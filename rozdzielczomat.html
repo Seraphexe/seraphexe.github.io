@@ -15,13 +15,17 @@
     <p>Kalkulator liczący kabinety i rozdzielczość ekranu</p>
 
     <p>
-        <label for="szerokosc_m">Szerokość ekranu (m):</label>
-        <input type="text" inputmode="decimal" id="szerokosc_m" placeholder="np. 1 / 1,5 / 2">
+        <label for="szerokosc_m">Szerokość ekranu:</label>
+        <select id="szerokosc_m">
+            <option value="">– wybierz –</option>
+        </select>
     </p>
 
     <p>
-        <label for="wysokosc_m">Wysokość ekranu (m):</label>
-        <input type="text" inputmode="decimal" id="wysokosc_m" placeholder="np. 1 / 1,5 / 2">
+        <label for="wysokosc_m">Wysokość ekranu:</label>
+        <select id="wysokosc_m">
+            <option value="">– wybierz –</option>
+        </select>
     </p>
 
     <fieldset class="pitche">
@@ -29,18 +33,37 @@
         <div class="kafelki">
             <label class="kafelek">
                 <input type="radio" name="pitch" value="1.5" checked>
-                <span class="kafelek-tresc"><strong>P1.5</strong>Indoor, fine-pitch<br>320×320 px</span>
+                <span class="kafelek-tresc"><strong>P1.5</strong>320×320 px</span>
             </label>
             <label class="kafelek">
                 <input type="radio" name="pitch" value="1.9">
-                <span class="kafelek-tresc"><strong>P1.9</strong>Indoor<br>256×256 px</span>
+                <span class="kafelek-tresc"><strong>P1.9</strong>256×256 px</span>
             </label>
             <label class="kafelek">
                 <input type="radio" name="pitch" value="2.6">
-                <span class="kafelek-tresc"><strong>P2.6</strong>Uniwersalny<br>192×192 px</span>
+                <span class="kafelek-tresc"><strong>P2.6</strong>192×192 px</span>
             </label>
             <label class="kafelek">
                 <input type="radio" name="pitch" value="3.9">
-                <span class="kafelek-tresc"><strong>P3.9</strong>Rental / scena<br>128×128 px</span>
+                <span class="kafelek-tresc"><strong>P3.9</strong>128×128 px</span>
             </label>
             <label class="kafelek">
+                <input type="radio" name="pitch" value="inny">
+                <span class="kafelek-tresc"><strong>Inny…</strong>wpisz własny</span>
+            </label>
+        </div>
+    </fieldset>
+
+    <p id="pitch_wlasny_blok" hidden>
+        <label for="pitch_wlasny">Własny pitch (mm):</label>
+        <input type="text" inputmode="decimal" id="pitch_wlasny" placeholder="np. 4,8">
+    </p>
+
+    <button id="oblicz">Oblicz</button>
+
+    <div id="wynik"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
