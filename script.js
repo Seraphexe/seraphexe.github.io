@@ -1,7 +1,7 @@
 // Rozmiar jednego kabinetu w metrach
 const KABINET_M = 0.5;
 
-// Ile pikseli ma jeden kabinet przy danym pitchu (jak w wersji z Pythona)
+// Ile pikseli ma jeden kabinet przy danym pitchu
 function pikseleNaKabinet(pitch) {
     if (pitch === 1.9) return 256;
     if (pitch === 2.5) return 200;
@@ -10,7 +10,7 @@ function pikseleNaKabinet(pitch) {
     return Math.round(500 / pitch);
 }
 
-// Buduje opis jednego wariantu ekranu (jak print-y w Pythonie)
+// Buduje opis jednego wariantu ekranu
 function opisEkranu(tytul, poziom, pion, piksele) {
     return `
         <h3>${tytul}</h3>
@@ -25,12 +25,25 @@ function opisEkranu(tytul, poziom, pion, piksele) {
 
 const przycisk = document.getElementById("oblicz");
 const wynik = document.getElementById("wynik");
+const pitchWybor = document.getElementById("pitch_wybor");
+const pitchWlasnyBlok = document.getElementById("pitch_wlasny_blok");
+
+// Pokaż pole "własny pitch" tylko po wybraniu "Inny…"
+pitchWybor.addEventListener("change", function () {
+    pitchWlasnyBlok.hidden = pitchWybor.value !== "inny";
+});
 
 przycisk.addEventListener("click", function () {
-    // 1. Odczyt danych z pól
+    // 1. Odczyt danych
     const szerokosc_m = Number(document.getElementById("szerokosc_m").value);
     const wysokosc_m = Number(document.getElementById("wysokosc_m").value);
-    const pitch = Number(document.getElementById("pitch").value);
+
+    let pitch;
+    if (pitchWybor.value === "inny") {
+        pitch = Number(document.getElementById("pitch").value);
+    } else {
+        pitch = Number(pitchWybor.value);
+    }
 
     // 2. Sprawdzenie, czy wszystko wpisano
     if (!(szerokosc_m > 0) || !(wysokosc_m > 0) || !(pitch > 0)) {

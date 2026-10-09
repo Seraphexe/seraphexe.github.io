@@ -25,7 +25,18 @@
     </p>
 
     <p>
-        <label for="pitch">Pitch diody:</label>
+        <label for="pitch_wybor">Pitch diody:</label>
+        <select id="pitch_wybor">
+            <option value="1.9">1.9 mm</option>
+            <option value="2.5">2.5 mm</option>
+            <option value="2.6">2.6 mm</option>
+            <option value="2.9">2.9 mm</option>
+            <option value="inny">Inny…</option>
+        </select>
+    </p>
+
+    <p id="pitch_wlasny_blok" hidden>
+        <label for="pitch">Własny pitch (mm):</label>
         <input type="number" id="pitch" step="any">
     </p>
 

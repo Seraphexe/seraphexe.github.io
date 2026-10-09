@@ -23,7 +23,9 @@ h3 {
 a {
     color: #ffffff;
 }
+
 input,
+select,
 button {
     font-size: 16px;
 }
