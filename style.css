@@ -80,3 +80,94 @@ button {
     outline: 2px solid #ffffff;
     outline-offset: 2px;
 }
+/* ===== Strona główna ===== */
+.naglowek {
+    padding: 40px 0 20px;
+    border-bottom: 1px solid #008f11;
+    margin-bottom: 20px;
+}
+
+.naglowek h1 {
+    font-size: 3em;
+    margin: 0.2em 0;
+    text-shadow: 0 0 12px #00ff41;
+}
+
+.prompt {
+    color: #008f11;
+    margin: 0;
+}
+
+.kursor {
+    animation: miganie 1s steps(1) infinite;
+}
+
+@keyframes miganie {
+    50% {
+        opacity: 0;
+    }
+}
+
+.podtytul {
+    margin: 0;
+}
+
+/* Karty projektów */
+.karty {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.karta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid #008f11;
+    border-radius: 6px;
+    color: #00cc33;
+    text-decoration: none;
+}
+
+.karta strong {
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+a.karta:hover,
+a.karta:focus-visible {
+    border-color: #00ff41;
+    background-color: #002b0b;
+    box-shadow: 0 0 8px #00ff41;
+}
+
+.status {
+    align-self: flex-start;
+    font-size: 0.8em;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.gotowe {
+    background-color: #00ff41;
+    color: #0d0d0d;
+}
+
+.w-budowie {
+    border: 1px dashed #008f11;
+    color: #008f11;
+}
+
+.technologie {
+    font-size: 0.85em;
+    color: #008f11;
+}
+
+.stopka {
+    margin-top: 40px;
+    padding-top: 10px;
+    border-top: 1px solid #008f11;
+    color: #008f11;
+    font-size: 0.85em;
+}
