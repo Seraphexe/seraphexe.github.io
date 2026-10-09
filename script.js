@@ -1,7 +1,12 @@
 // Rozmiar jednego kabinetu w metrach
 const KABINET_M = 0.5;
 
-// Ile pikseli ma jeden kabinet przy danym pitchu
+// Zamienia tekst z pola na liczbę; działa i z przecinkiem (1,5), i z kropką (1.5)
+function liczba(tekst) {
+    return Number(tekst.trim().replace(",", "."));
+}
+
+// Ile pikseli ma jeden kabinet 500 x 500 mm przy danym pitchu
 function pikseleNaKabinet(pitch) {
     if (pitch === 1.5) return 320;
     if (pitch === 1.9) return 256;
@@ -25,24 +30,28 @@ function opisEkranu(tytul, poziom, pion, piksele) {
 
 const przycisk = document.getElementById("oblicz");
 const wynik = document.getElementById("wynik");
-const pitchWybor = document.getElementById("pitch_wybor");
 const pitchWlasnyBlok = document.getElementById("pitch_wlasny_blok");
+const kafelkiPitch = document.querySelectorAll('input[name="pitch"]');
 
-// Pokaż pole "własny pitch" tylko po wybraniu "Inny…"
-pitchWybor.addEventListener("change", function () {
-    pitchWlasnyBlok.hidden = pitchWybor.value !== "inny";
+// Pokaż pole "własny pitch" tylko po wybraniu kafelka "Inny…"
+kafelkiPitch.forEach(function (kafelek) {
+    kafelek.addEventListener("change", function () {
+        const wybrany = document.querySelector('input[name="pitch"]:checked').value;
+        pitchWlasnyBlok.hidden = wybrany !== "inny";
+    });
 });
 
 przycisk.addEventListener("click", function () {
     // 1. Odczyt danych
-    const szerokosc_m = Number(document.getElementById("szerokosc_m").value);
-    const wysokosc_m = Number(document.getElementById("wysokosc_m").value);
+    const szerokosc_m = liczba(document.getElementById("szerokosc_m").value);
+    const wysokosc_m = liczba(document.getElementById("wysokosc_m").value);
 
+    const wybrany = document.querySelector('input[name="pitch"]:checked').value;
     let pitch;
-    if (pitchWybor.value === "inny") {
-        pitch = Number(document.getElementById("pitch").value);
+    if (wybrany === "inny") {
+        pitch = liczba(document.getElementById("pitch_wlasny").value);
     } else {
-        pitch = Number(pitchWybor.value);
+        pitch = Number(wybrany);
     }
 
     // 2. Sprawdzenie, czy wszystko wpisano

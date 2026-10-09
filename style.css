@@ -29,3 +29,53 @@ select,
 button {
     font-size: 16px;
 }
+/* Kafelki z pitchami */
+.pitche {
+    border: none;
+    padding: 0;
+    margin: 1em 0;
+}
+
+.pitche legend {
+    margin-bottom: 0.5em;
+}
+
+.kafelki {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.kafelek {
+    position: relative;
+}
+
+.kafelek input {
+    position: absolute;
+    opacity: 0;
+}
+
+.kafelek-tresc {
+    display: block;
+    border: 1px solid #008f11;
+    border-radius: 6px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.kafelek-tresc strong {
+    display: block;
+    color: #ffffff;
+    font-size: 1.2em;
+}
+
+.kafelek input:checked + .kafelek-tresc {
+    border-color: #00ff41;
+    background-color: #002b0b;
+    box-shadow: 0 0 8px #00ff41;
+}
+
+.kafelek input:focus-visible + .kafelek-tresc {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}

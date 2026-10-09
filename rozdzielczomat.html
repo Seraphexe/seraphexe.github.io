@@ -16,35 +16,31 @@
 
     <p>
         <label for="szerokosc_m">Szerokość ekranu (m):</label>
-        <input type="number" id="szerokosc_m" step="any">
+        <input type="text" inputmode="decimal" id="szerokosc_m" placeholder="np. 1 / 1,5 / 2">
     </p>
 
     <p>
         <label for="wysokosc_m">Wysokość ekranu (m):</label>
-        <input type="number" id="wysokosc_m" step="any">
+        <input type="text" inputmode="decimal" id="wysokosc_m" placeholder="np. 1 / 1,5 / 2">
     </p>
 
-    <p>
-        <label for="pitch_wybor">Pitch diody:</label>
-        <select id="pitch_wybor">
-            <option value="1.5">P1.5 (1.56 mm)</option>
-            <option value="1.9">P1.9 (1.953 mm)</option>
-            <option value="2.6">P2.6 (2.604 mm)</option>
-            <option value="3.9">P3.9 (3.91 mm)</option>
-            <option value="inny">Inny…</option>
-        </select>
-    </p>
-
-    <p id="pitch_wlasny_blok" hidden>
-        <label for="pitch">Własny pitch (mm):</label>
-        <input type="number" id="pitch" step="any">
-    </p>
-
-    <button id="oblicz">Oblicz</button>
-
-    <div id="wynik"></div>
-
-    <script src="script.js"></script>
-</body>
-
-</html>
+    <fieldset class="pitche">
+        <legend>Pitch diody:</legend>
+        <div class="kafelki">
+            <label class="kafelek">
+                <input type="radio" name="pitch" value="1.5" checked>
+                <span class="kafelek-tresc"><strong>P1.5</strong>Indoor, fine-pitch<br>320×320 px</span>
+            </label>
+            <label class="kafelek">
+                <input type="radio" name="pitch" value="1.9">
+                <span class="kafelek-tresc"><strong>P1.9</strong>Indoor<br>256×256 px</span>
+            </label>
+            <label class="kafelek">
+                <input type="radio" name="pitch" value="2.6">
+                <span class="kafelek-tresc"><strong>P2.6</strong>Uniwersalny<br>192×192 px</span>
+            </label>
+            <label class="kafelek">
+                <input type="radio" name="pitch" value="3.9">
+                <span class="kafelek-tresc"><strong>P3.9</strong>Rental / scena<br>128×128 px</span>
+            </label>
+            <label class="kafelek">
