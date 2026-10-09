@@ -3,10 +3,10 @@ const KABINET_M = 0.5;
 
 // Ile pikseli ma jeden kabinet przy danym pitchu
 function pikseleNaKabinet(pitch) {
+    if (pitch === 1.5) return 320;
     if (pitch === 1.9) return 256;
-    if (pitch === 2.5) return 200;
     if (pitch === 2.6) return 192;
-    if (pitch === 2.9) return 168;
+    if (pitch === 3.9) return 128;
     return Math.round(500 / pitch);
 }
 
