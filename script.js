@@ -4,8 +4,12 @@ const KABINET_M = 0.5;
 const MAX_ROZMIAR_M = 30;
 // Napięcie sieci (do liczenia prądu)
 const NAPIECIE_V = 230;
-// Ile pikseli obsługuje jeden port 1 Gb sterownika (przybliżenie)
-const PIKSELE_NA_PORT = 650000;
+// Ile pikseli obsługuje jeden port 1 Gb procesora przy 60 Hz (NovaStar)
+const PIKSELE_NA_PORT_60HZ = 655360;
+// Zabezpieczenie jednej linii zasilającej z rozdzielni [A]
+const BEZPIECZNIK_LINII_A = 16;
+// Bezpieczne obciążenie linii: 80% bezpiecznika (praca ciągła, rozruch ekranu)
+const OBCIAZENIE_LINII = 0.8;
 
 // Dane kabinetów 500 x 500 mm dla znanych pitchy.
 // waga [kg] i moc [W] na jeden kabinet; null = brak danych
@@ -48,42 +52,71 @@ function daneKabinetu(pitch) {
     return { piksele: Math.round(500 / pitch), waga: null, moc: null };
 }
 
+// Podpowiedź, jakie przyłącze trójfazowe wystarczy
+function przylacze(watow) {
+    const naFaze = watow / 3 / NAPIECIE_V;
+    if (naFaze <= 32) return `32 A (3 fazy), ok. ${Math.ceil(naFaze)} A na fazę`;
+    if (naFaze <= 63) return `63 A (3 fazy), ok. ${Math.ceil(naFaze)} A na fazę`;
+    return `ponad 63 A! ok. ${Math.ceil(naFaze)} A na fazę`;
+}
+
 // Buduje opis wyniku
-function opisEkranu(poziom, pion, dane) {
+function opisEkranu(poziom, pion, dane, odswiezanie) {
     const sztuk = poziom * pion;
     const szerPx = poziom * dane.piksele;
     const wysPx = pion * dane.piksele;
-    const porty = Math.ceil((szerPx * wysPx) / PIKSELE_NA_PORT);
+
+    // LAN: ile pełnych kabinetów mieści się na jednym porcie
+    // Wyższe odświeżanie = mniej pikseli na port (np. 120 Hz -> połowa)
+    const pikseliNaPort = PIKSELE_NA_PORT_60HZ * 60 / odswiezanie;
+    const kabNaPort = Math.max(1, Math.floor(pikseliNaPort / (dane.piksele * dane.piksele)));
+    const kableLan = Math.ceil(sztuk / kabNaPort);
+
+    let zasilanie = "brak danych o mocy";
+    let moc = "brak danych";
+    let zasilaniePrzylacze = "brak danych";
+    if (dane.moc !== null) {
+        const watow = sztuk * dane.moc;
+        // 16 A x 80% x 230 V = 2944 W na kabel; dla P1.9 (110 W) -> 26 kabinetów
+        const kabNaLinie = Math.max(1, Math.floor((BEZPIECZNIK_LINII_A * OBCIAZENIE_LINII * NAPIECIE_V) / dane.moc));
+        const kableZas = Math.ceil(sztuk / kabNaLinie);
+        zasilanie = `<strong>${kableZas}</strong> (do ${kabNaLinie} kabinetów na kabel 16 A)`;
+        moc = `${zaokr(watow / 1000)} kW`;
+        zasilaniePrzylacze = przylacze(watow);
+    }
 
     let waga = "brak danych";
     if (dane.waga !== null) {
         waga = `${zaokr(sztuk * dane.waga)} kg (same kabinety)`;
     }
 
-    let moc = "brak danych";
-    if (dane.moc !== null) {
-        const watow = sztuk * dane.moc;
-        moc = `${zaokr(watow / 1000)} kW, ok. ${Math.ceil(watow / NAPIECIE_V)} A przy 230 V`;
-    }
-
     return `
-        <h3>Wynik</h3>
-        <p>
-            Kabinety: ${poziom} x ${pion} (razem ${sztuk} szt.)<br>
-            Rozmiar: ${poPolsku(poziom * KABINET_M)} x ${poPolsku(pion * KABINET_M)} m<br>
-            Jeden kabinet: ${dane.piksele} x ${dane.piksele} px<br>
-            Rozdzielczość: ${szerPx} x ${wysPx} px<br>
-            Waga: ${waga}<br>
-            Moc maks.: ${moc}<br>
-            Porty sterownika (1 Gb): min. ${porty}
-        </p>
+        <div class="wyniki">
+            <div class="wynik-blok">
+                <h3>Ekran</h3>
+                <p>
+                    Kabinety: <strong>${poziom} x ${pion}</strong> (${sztuk} szt.)<br>
+                    Rozmiar: <strong>${poPolsku(poziom * KABINET_M)} x ${poPolsku(pion * KABINET_M)} m</strong><br>
+                    Rozdzielczość: <strong>${szerPx} x ${wysPx} px</strong><br>
+                    Jeden kabinet: ${dane.piksele} x ${dane.piksele} px
+                </p>
+            </div>
+            <div class="wynik-blok">
+                <h3>Na wyjazd</h3>
+                <p>
+                    Kable LAN z procesora: <strong>${kableLan}</strong> (do ${kabNaPort} kabinetów na port przy ${poPolsku(odswiezanie)} Hz)<br>
+                    Kable zasilające: ${zasilanie}<br>
+                    Moc maks.: ${moc}<br>
+                    Przyłącze: ${zasilaniePrzylacze}<br>
+                    Waga: ${waga}
+                </p>
+            </div>
+        </div>
     `;
 }
 
 const listaSzerokosc = document.getElementById("szerokosc_m");
 const listaWysokosc = document.getElementById("wysokosc_m");
-const trybMetry = document.getElementById("tryb_metry");
-const trybKabinety = document.getElementById("tryb_kabinety");
 const przycisk = document.getElementById("oblicz");
 const wynik = document.getElementById("wynik");
 const pitchWlasnyBlok = document.getElementById("pitch_wlasny_blok");
@@ -92,18 +125,26 @@ const kafelkiPitch = document.querySelectorAll('input[name="pitch"]');
 wypelnijRozmiary(listaSzerokosc);
 wypelnijRozmiary(listaWysokosc);
 
-// Przełączanie: metry <-> ilość kabinetów
-document.getElementById("na_kabinety").addEventListener("click", function () {
-    trybMetry.hidden = true;
-    trybKabinety.hidden = false;
-    wynik.innerHTML = "";
-});
+// Synchronizacja: metry <-> ilość kabinetów (zmiana jednego uzupełnia drugie)
+const poleKabPoziom = document.getElementById("kabinety_poziom");
+const poleKabPion = document.getElementById("kabinety_pion");
 
-document.getElementById("na_metry").addEventListener("click", function () {
-    trybKabinety.hidden = true;
-    trybMetry.hidden = false;
+function zMetrow(lista, pole) {
+    pole.value = lista.value ? Math.round(Number(lista.value) / KABINET_M) : "";
     wynik.innerHTML = "";
-});
+}
+
+function zKabinetow(pole, lista) {
+    const ile = Number(pole.value);
+    const metry = ile * KABINET_M;
+    lista.value = (Number.isInteger(ile) && ile > 0 && metry <= MAX_ROZMIAR_M) ? String(metry) : "";
+    wynik.innerHTML = "";
+}
+
+listaSzerokosc.addEventListener("change", function () { zMetrow(listaSzerokosc, poleKabPoziom); });
+listaWysokosc.addEventListener("change", function () { zMetrow(listaWysokosc, poleKabPion); });
+poleKabPoziom.addEventListener("input", function () { zKabinetow(poleKabPoziom, listaSzerokosc); });
+poleKabPion.addEventListener("input", function () { zKabinetow(poleKabPion, listaWysokosc); });
 
 // Pokaż pole "własny pitch" tylko po wybraniu kafelka "Inny…"
 kafelkiPitch.forEach(function (kafelek) {
@@ -114,16 +155,9 @@ kafelkiPitch.forEach(function (kafelek) {
 });
 
 przycisk.addEventListener("click", function () {
-    // 1. Ilość kabinetów: z metrów albo wpisana wprost
-    let poziom;
-    let pion;
-    if (trybKabinety.hidden) {
-        poziom = Math.round(Number(listaSzerokosc.value) / KABINET_M);
-        pion = Math.round(Number(listaWysokosc.value) / KABINET_M);
-    } else {
-        poziom = Number(document.getElementById("kabinety_poziom").value);
-        pion = Number(document.getElementById("kabinety_pion").value);
-    }
+    // 1. Ilość kabinetów (pola kabinetów są zawsze uzupełnione, także po wyborze metrów)
+    const poziom = Number(poleKabPoziom.value);
+    const pion = Number(poleKabPion.value);
 
     // 2. Pitch
     const wybrany = document.querySelector('input[name="pitch"]:checked').value;
@@ -145,5 +179,6 @@ przycisk.addEventListener("click", function () {
     }
 
     // 4. Wynik
-    wynik.innerHTML = opisEkranu(poziom, pion, daneKabinetu(pitch));
+    const odswiezanie = Number(document.getElementById("odswiezanie").value);
+    wynik.innerHTML = opisEkranu(poziom, pion, daneKabinetu(pitch), odswiezanie);
 });

@@ -172,13 +172,36 @@ a.karta:focus-visible {
     font-size: 0.85em;
 }
 
-/* Przełącznik metry / kabinety */
-.przelacznik {
-    background: none;
-    border: none;
-    padding: 0;
+/* Wymiary: metry i kabinety obok siebie */
+.wymiary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0 20px;
+}
+
+.wymiar-tytul {
     color: #ffffff;
-    font-family: monospace;
-    text-decoration: underline;
-    cursor: pointer;
+    margin-bottom: 0;
+}
+
+.wymiar-kolumna input {
+    width: 6em;
+}
+
+/* Wyniki w dwóch blokach */
+.wyniki {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.wynik-blok {
+    border: 1px solid #008f11;
+    border-radius: 6px;
+    padding: 0 14px;
+}
+
+.wynik-blok strong {
+    color: #ffffff;
 }
