@@ -125,8 +125,10 @@ function nowaSciana(wzor) {
         hz: wzor ? wzor.hz : 60,
         backup: false,
         procesor: "auto",
-        wspolnyProc: true,
-        wspolneZas: true,
+        grupaProc: wzor ? wzor.grupaProc : "1",   // procesor 1, 2, 3...
+        grupaZas: wzor ? wzor.grupaZas : "A",     // zasilanie A, B, C...
+        polaczona: null,    // numer ścianki, z którą tworzy jeden obraz (tylko wcześniejsze ścianki)
+        strona: "prawo",    // z której strony tamtej ścianki stoi
         obliczona: false,
     };
 }
@@ -227,7 +229,57 @@ function htmlSciany(w) {
     `;
 }
 
-// Podsumowanie wszystkich obliczonych ścianek
+// ===== Wspólne obrazy (połączone ścianki) =====
+
+const STRONY = { prawo: "z prawej", lewo: "z lewej", nad: "nad", pod: "pod" };
+
+// Układa połączone ścianki na wspólnym obrazie i liczy jego rozdzielczość.
+// Zwraca listę obrazów: { sciany: [...], szer, wys, puste, roznePitche }
+function obrazy(gotowe) {
+    const poz = {}; // numer ścianki -> { x, y, obraz }
+    const lista = [];
+    gotowe.forEach(function (g) {
+        const nr = sciany.indexOf(g.w);
+        const cel = g.w.polaczona;
+        if (cel !== null && poz[cel]) {
+            const t = poz[cel];
+            let x = t.x, y = t.y;
+            if (g.w.strona === "prawo") x = t.x + t.szer;
+            if (g.w.strona === "lewo") x = t.x - g.r.szerPx;
+            if (g.w.strona === "nad") y = t.y - g.r.wysPx;
+            if (g.w.strona === "pod") y = t.y + t.wys;
+            poz[nr] = { x: x, y: y, szer: g.r.szerPx, wys: g.r.wysPx, obraz: t.obraz };
+            t.obraz.elementy.push({ g: g, x: x, y: y });
+        } else {
+            const obraz = { elementy: [{ g: g, x: 0, y: 0 }] };
+            lista.push(obraz);
+            poz[nr] = { x: 0, y: 0, szer: g.r.szerPx, wys: g.r.wysPx, obraz: obraz };
+        }
+    });
+    return lista.map(function (o) {
+        const minX = Math.min.apply(null, o.elementy.map(function (e) { return e.x; }));
+        const minY = Math.min.apply(null, o.elementy.map(function (e) { return e.y; }));
+        const maxX = Math.max.apply(null, o.elementy.map(function (e) { return e.x + e.g.r.szerPx; }));
+        const maxY = Math.max.apply(null, o.elementy.map(function (e) { return e.y + e.g.r.wysPx; }));
+        const szer = maxX - minX, wys = maxY - minY;
+        const pole = o.elementy.reduce(function (s, e) { return s + e.g.r.szerPx * e.g.r.wysPx; }, 0);
+        const pitche = new Set(o.elementy.map(function (e) { return e.g.r.dane.piksele; }));
+        return { sciany: o.elementy.map(function (e) { return e.g.w.nazwa; }), szer: szer, wys: wys, puste: pole < szer * wys, roznePitche: pitche.size > 1 };
+    });
+}
+
+// ===== Podsumowanie wszystkich obliczonych ścianek =====
+
+const GRUPY_PROC = ["1", "2", "3", "4"];
+const GRUPY_ZAS = ["A", "B", "C", "D"];
+
+function listaGrupy(klasa, nr, wartosc, opcje, przedrostek) {
+    const o = opcje.map(function (g) {
+        return `<option value="${g}"${g === wartosc ? " selected" : ""}>${przedrostek}${g}</option>`;
+    }).join("");
+    return `<select class="mini-wybor ${klasa}" data-nr="${nr}">${o}</select>`;
+}
+
 function htmlPodsumowania() {
     const gotowe = sciany
         .map(function (w) { return { w: w, r: w.obliczona ? obliczSciane(w) : null }; })
@@ -237,68 +289,72 @@ function htmlPodsumowania() {
     const wiersze = gotowe.map(function (x) {
         const nr = sciany.indexOf(x.w);
         const lan = x.w.backup ? `${x.r.kableLan} <small>(${x.r.linieLan} + ${x.r.linieLan} backup)</small>` : `${x.r.kableLan}`;
-        const pole = function (klasa, wl, opis) {
-            return `<td class="srodek"><input type="checkbox" class="${klasa}" data-nr="${nr}" aria-label="${opis} ${x.w.nazwa}"${wl ? " checked" : ""}></td>`;
-        };
         return `<tr><td>${x.w.nazwa}</td><td>${x.r.poziom} × ${x.r.pion}</td><td>${x.r.szerPx} × ${x.r.wysPx}</td><td>${lan}</td>`
-            + pole("backup-wiersz", x.w.backup, "backup")
-            + pole("proc-wiersz", x.w.wspolnyProc, "wspólny procesor")
-            + pole("zas-wiersz", x.w.wspolneZas, "wspólne zasilanie")
+            + `<td class="srodek"><input type="checkbox" class="backup-wiersz" data-nr="${nr}" aria-label="backup ${x.w.nazwa}"${x.w.backup ? " checked" : ""}></td>`
+            + `<td>${listaGrupy("proc-wiersz", nr, x.w.grupaProc, GRUPY_PROC, "Procesor ")}</td>`
+            + `<td>${listaGrupy("zas-wiersz", nr, x.w.grupaZas, GRUPY_ZAS, "Zasilanie ")}</td>`
             + `<td>${x.r.waga !== null ? zaokr(x.r.waga) + " kg" : "–"}</td></tr>`;
     }).join("");
 
-    // Wspólny procesor
-    const gProc = gotowe.filter(function (x) { return x.w.wspolnyProc; });
-    let blokProc = "";
-    if (gProc.length >= 2) {
-        const porty = gProc.reduce(function (s, x) { return s + x.r.kableLan; }, 0);
-        const zBackupem = gProc.reduce(function (s, x) { return s + (x.w.backup ? x.r.linieLan : 0); }, 0);
-        const pikseli = gProc.reduce(function (s, x) { return s + x.r.szerPx * x.r.wysPx; }, 0);
-        const maxSzer = Math.max.apply(null, gProc.map(function (x) { return x.r.szerPx; }));
-        const maxWys = Math.max.apply(null, gProc.map(function (x) { return x.r.wysPx; }));
-        const sumSzer = gProc.reduce(function (s, x) { return s + x.r.szerPx; }, 0);
-        const sumWys = gProc.reduce(function (s, x) { return s + x.r.wysPx; }, 0);
-        // Ścianki na obrazie procesora: jedna pod drugą albo obok siebie
-        const x = { porty: porty, pikseli: pikseli, uklady: [[maxSzer, sumWys], [sumSzer, maxWys]] };
-        blokProc = `
-            <dl class="dane">
-                <dt>Ścianki</dt><dd>${gProc.map(function (g) { return g.w.nazwa; }).join(", ")}</dd>
-                <dt>Kable LAN z procesora</dt><dd>${porty}${zBackupem ? ` <small>(w tym backup: ${zBackupem})</small>` : ""}</dd>
-                <dt>Procesor</dt><dd>${opisProcesora("auto", x, null)}</dd>
-            </dl>`;
-    }
+    // Wspólne obrazy (połączone ścianki)
+    const obr = obrazy(gotowe).filter(function (o) { return o.sciany.length > 1; });
+    const blokObrazy = obr.length ? `
+        <div class="wyniki">${obr.map(function (o, i) {
+            return `<div class="wynik-blok"><h3>Obraz ${i + 1}</h3><dl class="dane">
+                <dt>Ścianki</dt><dd>${o.sciany.join(" + ")}</dd>
+                <dt>Rozdzielczość całości</dt><dd>${o.szer} x ${o.wys} px</dd>
+            </dl>
+            ${o.puste ? "<p><small>Obraz ma puste pola (ścianki nie wypełniają prostokąta).</small></p>" : ""}
+            ${o.roznePitche ? "<p><small>Uwaga: różne pitche w jednym obrazie.</small></p>" : ""}</div>`;
+        }).join("")}</div>` : "";
 
-    // Wspólne zasilanie
-    const gZas = gotowe.filter(function (x) { return x.w.wspolneZas; });
-    let blokZas = "";
-    if (gZas.length >= 2) {
-        const bezDanych = gZas.filter(function (x) { return x.r.watow === null; });
-        const zDanymi = gZas.filter(function (x) { return x.r.watow !== null; });
+    // Grupy procesorów
+    const blokiProc = GRUPY_PROC.map(function (gr) {
+        const g = gotowe.filter(function (x) { return x.w.grupaProc === gr; });
+        if (!g.length) return "";
+        const porty = g.reduce(function (s, x) { return s + x.r.kableLan; }, 0);
+        const zBackupem = g.reduce(function (s, x) { return s + (x.w.backup ? x.r.linieLan : 0); }, 0);
+        const pikseli = g.reduce(function (s, x) { return s + x.r.szerPx * x.r.wysPx; }, 0);
+        // Rozmiar obrazu na procesorze: połączone ścianki jako jeden obraz, reszta ułożona obok / pod sobą
+        const o = obrazy(g);
+        const uklady = [
+            [Math.max.apply(null, o.map(function (q) { return q.szer; })), o.reduce(function (s, q) { return s + q.wys; }, 0)],
+            [o.reduce(function (s, q) { return s + q.szer; }, 0), Math.max.apply(null, o.map(function (q) { return q.wys; }))],
+        ];
+        return `<div class="wynik-blok"><h3>Procesor ${gr}</h3><dl class="dane">
+            <dt>Ścianki</dt><dd>${g.map(function (x) { return x.w.nazwa; }).join(", ")}</dd>
+            <dt>Kable LAN z procesora</dt><dd>${porty}${zBackupem ? ` <small>(w tym backup: ${zBackupem})</small>` : ""}</dd>
+            <dt>Procesor</dt><dd>${opisProcesora("auto", { porty: porty, pikseli: pikseli, uklady: uklady }, null)}</dd>
+        </dl></div>`;
+    }).join("");
+
+    // Grupy zasilania
+    const blokiZas = GRUPY_ZAS.map(function (gr) {
+        const g = gotowe.filter(function (x) { return x.w.grupaZas === gr; });
+        if (!g.length) return "";
+        const zDanymi = g.filter(function (x) { return x.r.watow !== null; });
+        const bezDanych = g.filter(function (x) { return x.r.watow === null; });
         const kable = zDanymi.reduce(function (s, x) { return s + x.r.kableZas; }, 0);
         const watow = zDanymi.reduce(function (s, x) { return s + x.r.watow; }, 0);
-        blokZas = `
-            <dl class="dane">
-                <dt>Ścianki</dt><dd>${gZas.map(function (g) { return g.w.nazwa; }).join(", ")}</dd>
-                <dt>Kable zasilające</dt><dd>${zDanymi.length ? kable : "brak danych"}</dd>
-                <dt>Moc maks.</dt><dd>${zDanymi.length ? zaokr(watow / 1000) + " kW" : "brak danych"}</dd>
-                <dt>Przyłącze</dt><dd>${zDanymi.length ? przylacze(watow) : "brak danych"}</dd>
-            </dl>
-            ${bezDanych.length ? `<p><small>Bez danych o mocy: ${bezDanych.map(function (b) { return b.w.nazwa; }).join(", ")}</small></p>` : ""}`;
-    }
-
+        return `<div class="wynik-blok"><h3>Zasilanie ${gr}</h3><dl class="dane">
+            <dt>Ścianki</dt><dd>${g.map(function (x) { return x.w.nazwa; }).join(", ")}</dd>
+            <dt>Kable zasilające</dt><dd>${zDanymi.length ? kable : "brak danych"}</dd>
+            <dt>Moc maks.</dt><dd>${zDanymi.length ? zaokr(watow / 1000) + " kW" : "brak danych"}</dd>
+            <dt>Przyłącze</dt><dd>${zDanymi.length ? przylacze(watow) : "brak danych"}</dd>
+        </dl>
+        ${bezDanych.length ? `<p><small>Bez danych o mocy: ${bezDanych.map(function (b) { return b.w.nazwa; }).join(", ")}</small></p>` : ""}</div>`;
+    }).join("");
 
     return `
         <h2 class="podsumowanie-tytul">Podsumowanie</h2>
         <div class="tabela-wrap">
             <table class="tabela">
-                <thead><tr><th>Ścianka</th><th>Kabinety</th><th>Rozdzielczość</th><th>Kable LAN</th><th>Backup</th><th>Wspólny procesor</th><th>Wspólne zasilanie</th><th>Waga</th></tr></thead>
+                <thead><tr><th>Ścianka</th><th>Kabinety</th><th>Rozdzielczość</th><th>Kable LAN</th><th class="srodek">Backup</th><th>Procesor</th><th>Zasilanie</th><th>Waga</th></tr></thead>
                 <tbody>${wiersze}</tbody>
             </table>
         </div>
-        ${blokProc || blokZas ? `<div class="wyniki">
-            ${blokProc ? `<div class="wynik-blok"><h3>Wspólny procesor</h3>${blokProc}</div>` : ""}
-            ${blokZas ? `<div class="wynik-blok"><h3>Wspólne zasilanie</h3>${blokZas}</div>` : ""}
-        </div>` : ""}
+        ${blokObrazy}
+        <div class="wyniki">${blokiProc}${blokiZas}</div>
     `;
 }
 
@@ -317,6 +373,9 @@ const przycisk = document.getElementById("oblicz");
 const przyciskUsun = document.getElementById("usun_sciane");
 const wynik = document.getElementById("wynik");
 const podsumowanie = document.getElementById("podsumowanie");
+const blokPolaczenia = document.getElementById("polaczenie_blok");
+const listaPolaczona = document.getElementById("polaczona");
+const listaStrona = document.getElementById("strona");
 
 wypelnijRozmiary(listaSzerokosc);
 wypelnijRozmiary(listaWysokosc);
@@ -336,6 +395,20 @@ function wczytajFormularz(w) {
     kafelkiPitch.forEach(function (k) { k.checked = k.value === w.pitch; });
     polePitchWlasny.value = w.pitchWlasny;
     pitchWlasnyBlok.hidden = w.pitch !== "inny";
+    pokazPolaczenie(w);
+}
+
+// Lista "połączona z": tylko wcześniejsze ścianki (dzięki temu nie da się zrobić pętli)
+function pokazPolaczenie(w) {
+    const nr = sciany.indexOf(w);
+    blokPolaczenia.hidden = nr < 1;
+    if (nr < 1) return;
+    const opcje = ['<option value="">— osobny obraz —</option>'].concat(sciany.slice(0, nr).map(function (s2, i) {
+        return `<option value="${i}"${w.polaczona === i ? " selected" : ""}>${s2.nazwa}</option>`;
+    })).join("");
+    listaPolaczona.innerHTML = opcje;
+    listaStrona.value = w.strona;
+    listaStrona.disabled = w.polaczona === null;
 }
 
 // Odczytuje formularz do aktywnej ścianki
@@ -347,6 +420,11 @@ function zapiszFormularz() {
     w.pitch = document.querySelector('input[name="pitch"]:checked').value;
     w.pitchWlasny = polePitchWlasny.value;
     pitchWlasnyBlok.hidden = w.pitch !== "inny";
+    if (aktywna > 0) {
+        w.polaczona = listaPolaczona.value === "" ? null : Number(listaPolaczona.value);
+        w.strona = listaStrona.value;
+        listaStrona.disabled = w.polaczona === null;
+    }
 }
 
 function pokazZakladki() {
@@ -389,6 +467,8 @@ poleKabPion.addEventListener("input", function () {
 kafelkiPitch.forEach(function (k) { k.addEventListener("change", poZmianie); });
 polePitchWlasny.addEventListener("input", poZmianie);
 poleNazwa.addEventListener("input", poZmianie);
+listaPolaczona.addEventListener("change", poZmianie);
+listaStrona.addEventListener("change", poZmianie);
 
 przycisk.addEventListener("click", function () {
     zapiszFormularz();
@@ -413,7 +493,13 @@ zakladki.addEventListener("click", function (e) {
 
 przyciskUsun.addEventListener("click", function () {
     if (sciany.length < 2) return;
-    sciany.splice(aktywna, 1);
+    const usuwana = aktywna;
+    sciany.splice(usuwana, 1);
+    sciany.forEach(function (w, i) {
+        if (w.polaczona === usuwana) w.polaczona = null;
+        else if (w.polaczona !== null && w.polaczona > usuwana) w.polaczona -= 1;
+        if (i === 0) w.polaczona = null;
+    });
     aktywna = Math.max(0, aktywna - 1);
     wczytajFormularz(sciany[aktywna]);
     pokazWszystko();
@@ -434,8 +520,8 @@ podsumowanie.addEventListener("change", function (e) {
     const w = sciany[Number(e.target.dataset.nr)];
     if (!w) return;
     if (e.target.classList.contains("backup-wiersz")) w.backup = e.target.checked;
-    if (e.target.classList.contains("proc-wiersz")) w.wspolnyProc = e.target.checked;
-    if (e.target.classList.contains("zas-wiersz")) w.wspolneZas = e.target.checked;
+    if (e.target.classList.contains("proc-wiersz")) w.grupaProc = e.target.value;
+    if (e.target.classList.contains("zas-wiersz")) w.grupaZas = e.target.value;
     pokazWszystko();
 });
 
