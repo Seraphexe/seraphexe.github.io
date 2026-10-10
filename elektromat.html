@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elektromat – Seraphexe</title>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 
 <body>
@@ -91,7 +91,52 @@
 
     <div id="wynik"></div>
 
-    <script src="script.js?v=7"></script>
+    <details class="wyjasnienie">
+        <summary>Jak to liczymy?</summary>
+
+        <h3>Prąd w pigułce</h3>
+        <p>
+            Napięcie (V) to „ciśnienie” w sieci, w gniazdku zawsze 230 V.
+            Prąd (A) to ile go płynie naraz. Moc (W) to ile pracy wykonuje.
+            Łączy je wzór: <strong>moc = napięcie × prąd</strong>.
+        </p>
+
+        <h3>Moc kabinetu</h3>
+        <p>
+            Tabliczka P1.9: maks. 440 W/m². Kabinet 50 × 50 cm ma 0,25 m², więc bierze
+            <strong>110 W</strong>, czyli ok. 0,5 A. To pobór przy pełnej jasności (biały obraz);
+            przy zwykłych treściach zwykle ok. 1/3 tej wartości.
+        </p>
+
+        <h3>Kabinety na jeden kabel zasilający</h3>
+        <p>
+            Linia z bezpiecznikiem 16 A uciągnie 16 A × 230 V = 3680 W. Przy pracy ciągłej
+            obciążamy ją najwyżej w 80%, czyli 2944 W, co daje 26 kabinetów P1.9.
+        </p>
+        <p>
+            Ale w praktyce limitem jest <strong>prąd rozruchowy</strong>: przy włączeniu zasilacze
+            wszystkich kabinetów naraz ładują swoje kondensatory i przez kilka milisekund biorą
+            wielokrotnie więcej prądu. Tego nie ma na tabliczce. 16 kabinetów P1.9 na jednej linii
+            wybiło bezpiecznik przy starcie, a potem pracowało normalnie.
+            Dlatego kalkulator bierze mniejszą z dwóch liczb: z mocy albo <strong>15 kabinetów</strong> z praktyki.
+        </p>
+        <p><strong>Zasada: linie zasilające włączaj po kolei, nie wszystkie naraz.</strong></p>
+
+        <h3>Przyłącze</h3>
+        <p>
+            Gniazdo trójfazowe (czerwone, 5 bolców) ma 3 fazy. Kable zasilające rozkłada się
+            po równo na fazy. 32 A to ok. 22 kW, 63 A to ok. 43 kW.
+        </p>
+
+        <h3>Kable LAN z procesora</h3>
+        <p>
+            Jeden port 1 Gb obsługuje ok. 655 360 pikseli przy 60 Hz, czyli 10 kabinetów P1.9.
+            Wyższe odświeżanie zmniejsza tę liczbę (120 Hz to połowa), niższe zwiększa (30 Hz to dwa razy więcej).
+            Liczymy pełne kabinety, bo jednego kabinetu nie da się rozdzielić na dwa porty.
+        </p>
+    </details>
+
+    <script src="script.js?v=8"></script>
 </body>
 
 </html>

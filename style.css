@@ -205,3 +205,19 @@ a.karta:focus-visible {
 .wynik-blok strong {
     color: #ffffff;
 }
+
+/* Wyjaśnienie obliczeń (rozwijane) */
+.wyjasnienie {
+    margin-top: 30px;
+    border-top: 1px solid #008f11;
+    padding-top: 10px;
+}
+
+.wyjasnienie summary {
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.wyjasnienie strong {
+    color: #ffffff;
+}

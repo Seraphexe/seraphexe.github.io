@@ -8,8 +8,10 @@ const NAPIECIE_V = 230;
 const PIKSELE_NA_PORT_60HZ = 655360;
 // Zabezpieczenie jednej linii zasilającej z rozdzielni [A]
 const BEZPIECZNIK_LINII_A = 16;
-// Bezpieczne obciążenie linii: 80% bezpiecznika (praca ciągła, rozruch ekranu)
+// Bezpieczne obciążenie linii: 80% bezpiecznika (praca ciągła)
 const OBCIAZENIE_LINII = 0.8;
+// Limit z praktyki: prąd rozruchowy przy włączaniu (16 kabinetów P1.9 wybiło bezpiecznik)
+const MAX_KAB_NA_LINIE = 15;
 
 // Dane kabinetów 500 x 500 mm dla znanych pitchy.
 // waga [kg] i moc [W] na jeden kabinet; null = brak danych
@@ -77,10 +79,12 @@ function opisEkranu(poziom, pion, dane, odswiezanie) {
     let zasilaniePrzylacze = "brak danych";
     if (dane.moc !== null) {
         const watow = sztuk * dane.moc;
-        // 16 A x 80% x 230 V = 2944 W na kabel; dla P1.9 (110 W) -> 26 kabinetów
-        const kabNaLinie = Math.max(1, Math.floor((BEZPIECZNIK_LINII_A * OBCIAZENIE_LINII * NAPIECIE_V) / dane.moc));
+        // Z mocy: 16 A x 80% x 230 V = 2944 W na kabel; dla P1.9 (110 W) -> 26 kabinetów
+        const zMocy = Math.floor((BEZPIECZNIK_LINII_A * OBCIAZENIE_LINII * NAPIECIE_V) / dane.moc);
+        // Bierzemy mniejszą liczbę: z mocy albo limit z praktyki (rozruch)
+        const kabNaLinie = Math.max(1, Math.min(zMocy, MAX_KAB_NA_LINIE));
         const kableZas = Math.ceil(sztuk / kabNaLinie);
-        zasilanie = `<strong>${kableZas}</strong> (do ${kabNaLinie} kabinetów na kabel 16 A)`;
+        zasilanie = `<strong>${kableZas}</strong> (do ${kabNaLinie} kabinetów na kabel 16 A, włączaj linie po kolei)`;
         moc = `${zaokr(watow / 1000)} kW`;
         zasilaniePrzylacze = przylacze(watow);
     }
