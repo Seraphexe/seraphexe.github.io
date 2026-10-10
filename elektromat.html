@@ -4,29 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rozdzielczomat – Seraphexe</title>
-    <link rel="stylesheet" href="style.css?v=2">
+    <title>Elektromat – Seraphexe</title>
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 
 <body>
     <p><a href="index.html">← Strona Główna</a></p>
 
-    <h1>Rozdzielczomat</h1>
-    <p>Kalkulator liczący kabinety i rozdzielczość ekranu</p>
+    <h1>Elektromat</h1>
+    <p>Kalkulator ekranów LED: kabinety, rozdzielczość, waga, moc i porty sterownika.</p>
 
-    <p>
-        <label for="szerokosc_m">Szerokość ekranu:</label>
-        <select id="szerokosc_m">
-            <option value="">– wybierz –</option>
-        </select>
-    </p>
+    <!-- Tryb: wymiar w metrach -->
+    <div id="tryb_metry">
+        <p>
+            <label for="szerokosc_m">Szerokość ekranu:</label>
+            <select id="szerokosc_m">
+                <option value="">– wybierz –</option>
+            </select>
+        </p>
 
-    <p>
-        <label for="wysokosc_m">Wysokość ekranu:</label>
-        <select id="wysokosc_m">
-            <option value="">– wybierz –</option>
-        </select>
-    </p>
+        <p>
+            <label for="wysokosc_m">Wysokość ekranu:</label>
+            <select id="wysokosc_m">
+                <option value="">– wybierz –</option>
+            </select>
+        </p>
+
+        <p><button type="button" class="przelacznik" id="na_kabinety">lub podaj ilość kabinetów</button></p>
+    </div>
+
+    <!-- Tryb: ilość kabinetów -->
+    <div id="tryb_kabinety" hidden>
+        <p>
+            <label for="kabinety_poziom">Kabinety w poziomie:</label>
+            <input type="number" inputmode="numeric" id="kabinety_poziom" min="1" step="1" placeholder="np. 10">
+        </p>
+
+        <p>
+            <label for="kabinety_pion">Kabinety w pionie:</label>
+            <input type="number" inputmode="numeric" id="kabinety_pion" min="1" step="1" placeholder="np. 6">
+        </p>
+
+        <p><button type="button" class="przelacznik" id="na_metry">lub podaj wymiar w metrach</button></p>
+    </div>
 
     <fieldset class="pitche">
         <legend>Pitch diody:</legend>
@@ -63,7 +83,7 @@
 
     <div id="wynik"></div>
 
-    <script src="script.js?v=2"></script>
+    <script src="script.js?v=3"></script>
 </body>
 
 </html>

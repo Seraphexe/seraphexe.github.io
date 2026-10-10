@@ -171,3 +171,14 @@ a.karta:focus-visible {
     color: #008f11;
     font-size: 0.85em;
 }
+
+/* Przełącznik metry / kabinety */
+.przelacznik {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #ffffff;
+    font-family: monospace;
+    text-decoration: underline;
+    cursor: pointer;
+}
