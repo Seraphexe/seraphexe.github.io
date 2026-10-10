@@ -241,3 +241,13 @@ a.karta:focus-visible {
     padding: 0 4px;
     margin-left: 6px;
 }
+
+.mini-check {
+    color: #00cc33;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.mini-check input {
+    accent-color: #00ff41;
+}

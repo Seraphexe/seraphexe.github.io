@@ -114,7 +114,12 @@ function opisEkranu(poziom, pion, dane, odswiezanie, wyborProcesora) {
     // Wyższe odświeżanie = mniej pikseli na port (np. 120 Hz -> połowa)
     const pikseliNaPort = PIKSELE_NA_PORT_60HZ * 60 / odswiezanie;
     const kabNaPort = Math.max(1, Math.floor(pikseliNaPort / (dane.piksele * dane.piksele)));
-    const kableLan = Math.ceil(sztuk / kabNaPort);
+    const linieLan = Math.ceil(sztuk / kabNaPort);
+    // Backup: każda linia ma drugi kabel (i zajmuje drugi port)
+    const kableLan = backupLan ? linieLan * 2 : linieLan;
+    const opisLan = backupLan
+        ? `${kableLan} ${wyborOdswiezania(odswiezanie)} <small>(${linieLan} linii × 2, do ${kabNaPort} kab. na port)</small>`
+        : `${kableLan} ${wyborOdswiezania(odswiezanie)} <small>(do ${kabNaPort} kab. na port)</small>`;
 
     let zasilanie = "brak danych o mocy";
     let moc = "brak danych";
@@ -151,7 +156,7 @@ function opisEkranu(poziom, pion, dane, odswiezanie, wyborProcesora) {
             <div class="wynik-blok">
                 <h3>Sygnał</h3>
                 <dl class="dane">
-                    <dt>Kable LAN z procesora</dt><dd>${kableLan} ${wyborOdswiezania(odswiezanie)} <small>(do ${kabNaPort} kab. na port)</small></dd>
+                    <dt>Kable LAN z procesora</dt><dd>${opisLan}<br><label class="mini-check"><input type="checkbox" id="backup"${backupLan ? " checked" : ""}> backup (podwójny sygnał)</label></dd>
                     <dt>Procesor</dt><dd>${opisProcesora(wyborProcesora, szerPx, wysPx, kableLan)}</dd>
                 </dl>
             </div>
@@ -212,6 +217,7 @@ kafelkiPitch.forEach(function (kafelek) {
 const ODSWIEZANIA = [29.97, 30, 50, 60, 100, 120];
 let odswiezanieHz = 60;
 let procesorWybor = "auto";
+let backupLan = false;
 
 function wyborOdswiezania(aktualne) {
     const opcje = ODSWIEZANIA.map(function (hz) {
@@ -235,6 +241,10 @@ function pokazWynik() {
 wynik.addEventListener("change", function (e) {
     if (e.target.id === "odswiezanie") {
         odswiezanieHz = Number(e.target.value);
+        pokazWynik();
+    }
+    if (e.target.id === "backup") {
+        backupLan = e.target.checked;
         pokazWynik();
     }
     if (e.target.id === "procesor") {
