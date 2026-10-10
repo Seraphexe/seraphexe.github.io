@@ -1,0 +1,314 @@
+/* ===== Ekranomat: ciemny, "sprzętowy" wygląd ===== */
+:root {
+    --tlo: #141619;
+    --panel: #1c1f23;
+    --panel-jasny: #24282d;
+    --linia: #33383f;
+    --tekst: #e6e8eb;
+    --tekst-slaby: #8b929a;
+    --akcent: #ffb000;
+    --akcent-ciemny: #3a2c08;
+    --cyfry: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0 auto;
+    max-width: 760px;
+    padding: 20px 16px 60px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    color: var(--tekst);
+    background-color: var(--tlo);
+    /* Delikatna siatka jak kabinety */
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-attachment: fixed;
+}
+
+a {
+    color: var(--tekst-slaby);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--akcent);
+}
+
+h1 {
+    margin: 24px 0 4px;
+    font-size: 2em;
+    letter-spacing: -0.02em;
+}
+
+h1::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 10px;
+    border-radius: 2px;
+    background: var(--akcent);
+    box-shadow: 0 0 10px var(--akcent);
+    vertical-align: middle;
+}
+
+h1 + p {
+    margin-top: 0;
+    color: var(--tekst-slaby);
+}
+
+h3 {
+    margin: 0 0 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--akcent);
+}
+
+label,
+legend {
+    color: var(--tekst-slaby);
+    font-size: 0.9em;
+}
+
+/* ----- Pola, listy, przyciski ----- */
+input[type="number"],
+input[type="text"],
+select {
+    font: inherit;
+    font-size: 16px;
+    color: var(--tekst);
+    background-color: var(--panel-jasny);
+    border: 1px solid var(--linia);
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+    outline: none;
+    border-color: var(--akcent);
+}
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 28px;
+    background-image: linear-gradient(45deg, transparent 50%, var(--tekst-slaby) 50%),
+        linear-gradient(135deg, var(--tekst-slaby) 50%, transparent 50%);
+    background-position: right 13px center, right 8px center;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+}
+
+#oblicz {
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: #141619;
+    background-color: var(--akcent);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 28px;
+    margin-top: 8px;
+    cursor: pointer;
+}
+
+#oblicz:hover {
+    box-shadow: 0 0 14px rgba(255, 176, 0, 0.5);
+}
+
+/* ----- Wymiary: metry | kabinety ----- */
+.wymiary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+    margin-top: 20px;
+}
+
+.wymiar-kolumna {
+    background: var(--panel);
+    border: 1px solid var(--linia);
+    border-radius: 8px;
+    padding: 4px 14px;
+}
+
+.wymiar-tytul {
+    color: var(--tekst);
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.wymiar-kolumna p {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.wymiar-kolumna input,
+.wymiar-kolumna select {
+    width: 7.5em;
+}
+
+@media (max-width: 560px) {
+    .wymiary {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+/* ----- Kafelki z pitchami ----- */
+.pitche {
+    border: none;
+    padding: 0;
+    margin: 20px 0 10px;
+}
+
+.pitche legend {
+    margin-bottom: 8px;
+}
+
+.kafelki {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+.kafelek {
+    position: relative;
+}
+
+.kafelek input {
+    position: absolute;
+    opacity: 0;
+}
+
+.kafelek-tresc {
+    display: block;
+    padding: 10px 12px;
+    background: var(--panel);
+    border: 1px solid var(--linia);
+    border-radius: 8px;
+    color: var(--tekst-slaby);
+    font-family: var(--cyfry);
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.kafelek-tresc strong {
+    display: block;
+    color: var(--tekst);
+    font-family: inherit;
+    font-size: 1.3em;
+}
+
+.kafelek input:checked + .kafelek-tresc {
+    border-color: var(--akcent);
+    background: var(--akcent-ciemny);
+}
+
+.kafelek input:checked + .kafelek-tresc strong {
+    color: var(--akcent);
+}
+
+.kafelek input:focus-visible + .kafelek-tresc {
+    outline: 2px solid var(--akcent);
+    outline-offset: 2px;
+}
+
+/* ----- Podgląd kształtu ekranu ----- */
+.podglad-wrap {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.podglad {
+    display: inline-block;
+    max-width: 100%;
+    border: 1px solid var(--akcent);
+    background-color: rgba(255, 176, 0, 0.06);
+    background-image:
+        linear-gradient(to right, rgba(255, 176, 0, 0.45) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 176, 0, 0.45) 1px, transparent 1px);
+    box-shadow: 0 0 24px rgba(255, 176, 0, 0.12);
+}
+
+.podglad-opis {
+    margin: 6px 0 0;
+    color: var(--tekst-slaby);
+    font-family: var(--cyfry);
+    font-size: 0.8em;
+}
+
+/* ----- Wyniki ----- */
+.wyniki {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.wynik-blok {
+    background: var(--panel);
+    border: 1px solid var(--linia);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.dane {
+    margin: 0;
+}
+
+.dane dt {
+    margin-top: 10px;
+    color: var(--tekst-slaby);
+    font-size: 0.85em;
+}
+
+.dane dt:first-child {
+    margin-top: 0;
+}
+
+.dane dd {
+    margin: 2px 0 0;
+    color: var(--tekst);
+    font-family: var(--cyfry);
+    font-size: 1.05em;
+    font-weight: 600;
+}
+
+.dane small {
+    color: var(--tekst-slaby);
+    font-weight: normal;
+    font-size: 0.78em;
+}
+
+.mini-wybor {
+    font-size: 14px !important;
+    padding: 2px 24px 2px 8px !important;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.mini-check {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--tekst-slaby);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.85em;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.mini-check input {
+    accent-color: var(--akcent);
+}

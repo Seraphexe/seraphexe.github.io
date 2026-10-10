@@ -15,8 +15,8 @@ const MAX_KAB_NA_LINIE = 15;
 
 // Procesory (wg kart producenta)
 const PROCESORY = {
-    "mctrl4k": { nazwa: "MCTRL4K", porty: 16, maxPikseli: 3840 * 2160, maxSzer: 3840, maxWys: 2160 },
     "vx1000pro": { nazwa: "VX1000 Pro", porty: 10, maxPikseli: 6500000, maxSzer: 10240, maxWys: 8192 },
+    "mctrl4k": { nazwa: "MCTRL4K", porty: 16, maxPikseli: 3840 * 2160, maxSzer: 3840, maxWys: 2160 },
 };
 
 // Dane kabinetów 500 x 500 mm dla znanych pitchy.
@@ -141,7 +141,15 @@ function opisEkranu(poziom, pion, dane, odswiezanie, wyborProcesora) {
         waga = `${zaokr(sztuk * dane.waga)} kg`;
     }
 
-    return `
+    // Podgląd kształtu: prostokąt w proporcjach ekranu z siatką kabinetów (maks. 220 px wysokości)
+    const podglad = `
+        <div class="podglad-wrap">
+            <div class="podglad" style="width: min(100%, ${Math.round(220 * poziom / pion)}px); aspect-ratio: ${poziom} / ${pion}; background-size: calc(100% / ${poziom}) calc(100% / ${pion});"></div>
+            <p class="podglad-opis">${poziom} × ${pion} kabinetów · ${poPolsku(poziom * KABINET_M)} × ${poPolsku(pion * KABINET_M)} m · widok rozwinięty</p>
+        </div>
+    `;
+
+    return podglad + `
         <div class="wyniki">
             <div class="wynik-blok">
                 <h3>Ekran</h3>
@@ -216,7 +224,7 @@ kafelkiPitch.forEach(function (kafelek) {
 // Mały przełącznik odświeżania przy kablach LAN
 const ODSWIEZANIA = [29.97, 30, 50, 60, 100, 120];
 let odswiezanieHz = 60;
-let procesorWybor = "mctrl4k"; // domyślnie MCTRL4K (najczęściej używany)
+let procesorWybor = "auto";
 let backupLan = false;
 
 function wyborOdswiezania(aktualne) {
