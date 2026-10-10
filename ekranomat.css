@@ -344,13 +344,6 @@ select {
     color: #ff6b6b;
 }
 
-.wynik-blok > .mini-check {
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid var(--linia);
-    display: block;
-}
-
 /* ----- Podsumowanie ----- */
 .podsumowanie-tytul {
     margin: 36px 0 12px;
@@ -387,6 +380,15 @@ select {
     font-size: 0.85em;
 }
 
+.tabela th:nth-child(5),
+.tabela th:nth-child(6),
+.tabela th:nth-child(7),
+.tabela td:nth-child(5),
+.tabela td:nth-child(6),
+.tabela td:nth-child(7) {
+    text-align: center;
+}
+
 .tabela input[type="checkbox"] {
     accent-color: var(--akcent);
     width: 16px;
@@ -395,5 +397,9 @@ select {
 
 .tabela small {
     color: var(--tekst-slaby);
+}
+
+.tabela .srodek {
+    text-align: center;
 }
 

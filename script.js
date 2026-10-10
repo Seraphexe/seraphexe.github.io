@@ -185,7 +185,6 @@ function htmlSciany(w) {
     const r = obliczSciane(w);
     if (r.blad) return `<p>${r.blad}</p>`;
 
-    const kilka = sciany.length > 1;
     const opisLan = w.backup
         ? `${r.kableLan} ${wyborOdswiezania(w.hz)} <small>(${r.linieLan} linii × 2, do ${r.kabNaPort} kab. na port)</small>`
         : `${r.kableLan} ${wyborOdswiezania(w.hz)} <small>(do ${r.kabNaPort} kab. na port)</small>`;
@@ -215,7 +214,6 @@ function htmlSciany(w) {
                     <dt>Kable LAN z procesora</dt><dd>${opisLan}<br>${zaznaczenie("backup", "backup (podwójny sygnał)", w.backup)}</dd>
                     <dt>Procesor</dt><dd>${proc}</dd>
                 </dl>
-                ${kilka ? zaznaczenie("wspolny_proc", "wspólny procesor z innymi ściankami", w.wspolnyProc) : ""}
             </div>
             <div class="wynik-blok">
                 <h3>Zasilanie</h3>
@@ -224,7 +222,6 @@ function htmlSciany(w) {
                     <dt>Moc maks.</dt><dd>${moc}</dd>
                     <dt>Przyłącze</dt><dd>${przyl}</dd>
                 </dl>
-                ${kilka ? zaznaczenie("wspolne_zas", "wspólne zasilanie z innymi ściankami", w.wspolneZas) : ""}
             </div>
         </div>
     `;
@@ -240,13 +237,20 @@ function htmlPodsumowania() {
     const wiersze = gotowe.map(function (x) {
         const nr = sciany.indexOf(x.w);
         const lan = x.w.backup ? `${x.r.kableLan} <small>(${x.r.linieLan} + ${x.r.linieLan} backup)</small>` : `${x.r.kableLan}`;
-        return `<tr><td>${x.w.nazwa}</td><td>${x.r.poziom} × ${x.r.pion}</td><td>${x.r.szerPx} × ${x.r.wysPx}</td><td>${lan}</td><td><input type="checkbox" class="backup-wiersz" data-nr="${nr}" aria-label="backup ${x.w.nazwa}"${x.w.backup ? " checked" : ""}></td><td>${x.r.waga !== null ? zaokr(x.r.waga) + " kg" : "–"}</td></tr>`;
+        const pole = function (klasa, wl, opis) {
+            return `<td class="srodek"><input type="checkbox" class="${klasa}" data-nr="${nr}" aria-label="${opis} ${x.w.nazwa}"${wl ? " checked" : ""}></td>`;
+        };
+        return `<tr><td>${x.w.nazwa}</td><td>${x.r.poziom} × ${x.r.pion}</td><td>${x.r.szerPx} × ${x.r.wysPx}</td><td>${lan}</td>`
+            + pole("backup-wiersz", x.w.backup, "backup")
+            + pole("proc-wiersz", x.w.wspolnyProc, "wspólny procesor")
+            + pole("zas-wiersz", x.w.wspolneZas, "wspólne zasilanie")
+            + `<td>${x.r.waga !== null ? zaokr(x.r.waga) + " kg" : "–"}</td></tr>`;
     }).join("");
 
     // Wspólny procesor
     const gProc = gotowe.filter(function (x) { return x.w.wspolnyProc; });
-    let blokProc = "<p><small>Żadna ścianka nie ma zaznaczonego wspólnego procesora.</small></p>";
-    if (gProc.length) {
+    let blokProc = "";
+    if (gProc.length >= 2) {
         const porty = gProc.reduce(function (s, x) { return s + x.r.kableLan; }, 0);
         const zBackupem = gProc.reduce(function (s, x) { return s + (x.w.backup ? x.r.linieLan : 0); }, 0);
         const pikseli = gProc.reduce(function (s, x) { return s + x.r.szerPx * x.r.wysPx; }, 0);
@@ -266,8 +270,8 @@ function htmlPodsumowania() {
 
     // Wspólne zasilanie
     const gZas = gotowe.filter(function (x) { return x.w.wspolneZas; });
-    let blokZas = "<p><small>Żadna ścianka nie ma zaznaczonego wspólnego zasilania.</small></p>";
-    if (gZas.length) {
+    let blokZas = "";
+    if (gZas.length >= 2) {
         const bezDanych = gZas.filter(function (x) { return x.r.watow === null; });
         const zDanymi = gZas.filter(function (x) { return x.r.watow !== null; });
         const kable = zDanymi.reduce(function (s, x) { return s + x.r.kableZas; }, 0);
@@ -282,29 +286,19 @@ function htmlPodsumowania() {
             ${bezDanych.length ? `<p><small>Bez danych o mocy: ${bezDanych.map(function (b) { return b.w.nazwa; }).join(", ")}</small></p>` : ""}`;
     }
 
-    const osobno = gotowe.filter(function (x) { return !x.w.wspolnyProc || !x.w.wspolneZas; });
-    const notkaOsobno = osobno.length
-        ? `<p class="podsumowanie-notka">Osobno liczone: ${osobno.map(function (x) {
-            const co = [];
-            if (!x.w.wspolnyProc) co.push("procesor");
-            if (!x.w.wspolneZas) co.push("zasilanie");
-            return `${x.w.nazwa} (${co.join(", ")})`;
-        }).join("; ")} — szczegóły w wynikach danej ścianki.</p>`
-        : "";
 
     return `
         <h2 class="podsumowanie-tytul">Podsumowanie</h2>
         <div class="tabela-wrap">
             <table class="tabela">
-                <thead><tr><th>Ścianka</th><th>Kabinety</th><th>Rozdzielczość</th><th>Kable LAN</th><th>Backup</th><th>Waga</th></tr></thead>
+                <thead><tr><th>Ścianka</th><th>Kabinety</th><th>Rozdzielczość</th><th>Kable LAN</th><th>Backup</th><th>Wspólny procesor</th><th>Wspólne zasilanie</th><th>Waga</th></tr></thead>
                 <tbody>${wiersze}</tbody>
             </table>
         </div>
-        <div class="wyniki">
-            <div class="wynik-blok"><h3>Wspólny procesor</h3>${blokProc}</div>
-            <div class="wynik-blok"><h3>Wspólne zasilanie</h3>${blokZas}</div>
-        </div>
-        ${notkaOsobno}
+        ${blokProc || blokZas ? `<div class="wyniki">
+            ${blokProc ? `<div class="wynik-blok"><h3>Wspólny procesor</h3>${blokProc}</div>` : ""}
+            ${blokZas ? `<div class="wynik-blok"><h3>Wspólne zasilanie</h3>${blokZas}</div>` : ""}
+        </div>` : ""}
     `;
 }
 
@@ -432,15 +426,16 @@ wynik.addEventListener("change", function (e) {
     if (id === "odswiezanie") w.hz = Number(e.target.value);
     if (id === "backup") w.backup = e.target.checked;
     if (id === "procesor") w.procesor = e.target.value;
-    if (id === "wspolny_proc") w.wspolnyProc = e.target.checked;
-    if (id === "wspolne_zas") w.wspolneZas = e.target.checked;
     pokazWszystko();
 });
 
-// Backup przełączany prosto z tabeli w podsumowaniu
+// Backup, wspólny procesor i wspólne zasilanie przełączane prosto z tabeli w podsumowaniu
 podsumowanie.addEventListener("change", function (e) {
-    if (!e.target.classList.contains("backup-wiersz")) return;
-    sciany[Number(e.target.dataset.nr)].backup = e.target.checked;
+    const w = sciany[Number(e.target.dataset.nr)];
+    if (!w) return;
+    if (e.target.classList.contains("backup-wiersz")) w.backup = e.target.checked;
+    if (e.target.classList.contains("proc-wiersz")) w.wspolnyProc = e.target.checked;
+    if (e.target.classList.contains("zas-wiersz")) w.wspolneZas = e.target.checked;
     pokazWszystko();
 });
 
