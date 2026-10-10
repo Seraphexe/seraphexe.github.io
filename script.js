@@ -196,14 +196,8 @@ function htmlSciany(w) {
     const przyl = r.watow !== null ? przylacze(r.watow) : "brak danych";
     const waga = r.waga !== null ? `${zaokr(r.waga)} kg` : "brak danych";
 
-    const podglad = `
-        <div class="podglad-wrap">
-            <div class="podglad" style="width: min(100%, ${Math.round(220 * r.poziom / r.pion)}px); aspect-ratio: ${r.poziom} / ${r.pion}; background-size: calc(100% / ${r.poziom}) calc(100% / ${r.pion});"></div>
-            <p class="podglad-opis">${r.poziom} × ${r.pion} kabinetów · ${poPolsku(r.poziom * KABINET_M)} × ${poPolsku(r.pion * KABINET_M)} m · widok rozwinięty</p>
-        </div>
-    `;
 
-    return podglad + `
+    return `
         <div class="wyniki">
             <div class="wynik-blok">
                 <h3>Ekran</h3>
@@ -244,7 +238,9 @@ function htmlPodsumowania() {
     if (sciany.length < 2 || gotowe.length < 2) return "";
 
     const wiersze = gotowe.map(function (x) {
-        return `<tr><td>${x.w.nazwa}</td><td>${x.r.poziom} × ${x.r.pion}</td><td>${x.r.szerPx} × ${x.r.wysPx}</td><td>${x.r.waga !== null ? zaokr(x.r.waga) + " kg" : "–"}</td></tr>`;
+        const nr = sciany.indexOf(x.w);
+        const lan = x.w.backup ? `${x.r.kableLan} <small>(${x.r.linieLan} + ${x.r.linieLan} backup)</small>` : `${x.r.kableLan}`;
+        return `<tr><td>${x.w.nazwa}</td><td>${x.r.poziom} × ${x.r.pion}</td><td>${x.r.szerPx} × ${x.r.wysPx}</td><td>${lan}</td><td><input type="checkbox" class="backup-wiersz" data-nr="${nr}" aria-label="backup ${x.w.nazwa}"${x.w.backup ? " checked" : ""}></td><td>${x.r.waga !== null ? zaokr(x.r.waga) + " kg" : "–"}</td></tr>`;
     }).join("");
 
     // Wspólny procesor
@@ -252,6 +248,7 @@ function htmlPodsumowania() {
     let blokProc = "<p><small>Żadna ścianka nie ma zaznaczonego wspólnego procesora.</small></p>";
     if (gProc.length) {
         const porty = gProc.reduce(function (s, x) { return s + x.r.kableLan; }, 0);
+        const zBackupem = gProc.reduce(function (s, x) { return s + (x.w.backup ? x.r.linieLan : 0); }, 0);
         const pikseli = gProc.reduce(function (s, x) { return s + x.r.szerPx * x.r.wysPx; }, 0);
         const maxSzer = Math.max.apply(null, gProc.map(function (x) { return x.r.szerPx; }));
         const maxWys = Math.max.apply(null, gProc.map(function (x) { return x.r.wysPx; }));
@@ -262,7 +259,7 @@ function htmlPodsumowania() {
         blokProc = `
             <dl class="dane">
                 <dt>Ścianki</dt><dd>${gProc.map(function (g) { return g.w.nazwa; }).join(", ")}</dd>
-                <dt>Kable LAN z procesora</dt><dd>${porty}</dd>
+                <dt>Kable LAN z procesora</dt><dd>${porty}${zBackupem ? ` <small>(w tym backup: ${zBackupem})</small>` : ""}</dd>
                 <dt>Procesor</dt><dd>${opisProcesora("auto", x, null)}</dd>
             </dl>`;
     }
@@ -299,7 +296,7 @@ function htmlPodsumowania() {
         <h2 class="podsumowanie-tytul">Podsumowanie</h2>
         <div class="tabela-wrap">
             <table class="tabela">
-                <thead><tr><th>Ścianka</th><th>Kabinety</th><th>Rozdzielczość</th><th>Waga</th></tr></thead>
+                <thead><tr><th>Ścianka</th><th>Kabinety</th><th>Rozdzielczość</th><th>Kable LAN</th><th>Backup</th><th>Waga</th></tr></thead>
                 <tbody>${wiersze}</tbody>
             </table>
         </div>
@@ -437,6 +434,13 @@ wynik.addEventListener("change", function (e) {
     if (id === "procesor") w.procesor = e.target.value;
     if (id === "wspolny_proc") w.wspolnyProc = e.target.checked;
     if (id === "wspolne_zas") w.wspolneZas = e.target.checked;
+    pokazWszystko();
+});
+
+// Backup przełączany prosto z tabeli w podsumowaniu
+podsumowanie.addEventListener("change", function (e) {
+    if (!e.target.classList.contains("backup-wiersz")) return;
+    sciany[Number(e.target.dataset.nr)].backup = e.target.checked;
     pokazWszystko();
 });
 
