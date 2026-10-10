@@ -108,11 +108,17 @@ function opisProcesora(wybor, x, idListy) {
     return tekst;
 }
 
+function nazwaModelu(klucz) {
+    return klucz === "auto" ? "dobór auto" : PROCESORY[klucz].nazwa;
+}
+
 // ===== Ścianki =====
 
 const ODSWIEZANIA = [29.97, 30, 50, 60, 100, 120];
 
 let sciany = [];
+// Model procesora należy do grupy (Procesor 1, 2...), a nie do ścianki
+const modelGrupy = { "1": "auto", "2": "auto", "3": "auto", "4": "auto" };
 let aktywna = 0;
 
 function nowaSciana(wzor) {
@@ -124,7 +130,6 @@ function nowaSciana(wzor) {
         pitchWlasny: wzor ? wzor.pitchWlasny : "",
         hz: wzor ? wzor.hz : 60,
         backup: false,
-        procesor: "auto",
         grupaProc: wzor ? wzor.grupaProc : "1",   // procesor 1, 2, 3...
         grupaZas: wzor ? wzor.grupaZas : "A",     // zasilanie A, B, C...
         polaczona: null,    // numer ścianki, z którą tworzy jeden obraz (tylko wcześniejsze ścianki)
@@ -190,7 +195,10 @@ function htmlSciany(w) {
     const opisLan = w.backup
         ? `${r.kableLan} ${wyborOdswiezania(w.hz)} <small>(${r.linieLan} linii × 2, do ${r.kabNaPort} kab. na port)</small>`
         : `${r.kableLan} ${wyborOdswiezania(w.hz)} <small>(do ${r.kabNaPort} kab. na port)</small>`;
-    const proc = opisProcesora(w.procesor, { porty: r.kableLan, pikseli: r.szerPx * r.wysPx, uklady: [[r.szerPx, r.wysPx]] }, "procesor");
+    // Jedna ścianka: wybór modelu tutaj. Kilka ścianek: procesor liczy się w podsumowaniu dla całej grupy
+    const proc = sciany.length > 1
+        ? `Procesor ${w.grupaProc} <small>(${nazwaModelu(modelGrupy[w.grupaProc])}, liczony w podsumowaniu)</small>`
+        : opisProcesora(modelGrupy[w.grupaProc], { porty: r.kableLan, pikseli: r.szerPx * r.wysPx, uklady: [[r.szerPx, r.wysPx]] }, "procesor");
 
     const zasilanie = r.kableZas !== null ? `${r.kableZas} <small>(do ${r.kabNaLinie} kab. na kabel 16 A)</small>` : "brak danych o mocy";
     const moc = r.watow !== null ? `${zaokr(r.watow / 1000)} kW` : "brak danych";
@@ -324,7 +332,7 @@ function htmlPodsumowania() {
         return `<div class="wynik-blok"><h3>Procesor ${gr}</h3><dl class="dane">
             <dt>Ścianki</dt><dd>${g.map(function (x) { return x.w.nazwa; }).join(", ")}</dd>
             <dt>Kable LAN z procesora</dt><dd>${porty}${zBackupem ? ` <small>(w tym backup: ${zBackupem})</small>` : ""}</dd>
-            <dt>Procesor</dt><dd>${opisProcesora("auto", { porty: porty, pikseli: pikseli, uklady: uklady }, null)}</dd>
+            <dt>Procesor</dt><dd>${opisProcesora(modelGrupy[gr], { porty: porty, pikseli: pikseli, uklady: uklady }, "model_" + gr)}</dd>
         </dl></div>`;
     }).join("");
 
@@ -511,12 +519,18 @@ wynik.addEventListener("change", function (e) {
     const id = e.target.id;
     if (id === "odswiezanie") w.hz = Number(e.target.value);
     if (id === "backup") w.backup = e.target.checked;
-    if (id === "procesor") w.procesor = e.target.value;
+    if (id === "procesor") modelGrupy[w.grupaProc] = e.target.value;
     pokazWszystko();
 });
 
 // Backup, wspólny procesor i wspólne zasilanie przełączane prosto z tabeli w podsumowaniu
 podsumowanie.addEventListener("change", function (e) {
+    // Model procesora w ramce grupy
+    if (e.target.id && e.target.id.indexOf("model_") === 0) {
+        modelGrupy[e.target.id.slice(6)] = e.target.value;
+        pokazWszystko();
+        return;
+    }
     const w = sciany[Number(e.target.dataset.nr)];
     if (!w) return;
     if (e.target.classList.contains("backup-wiersz")) w.backup = e.target.checked;
