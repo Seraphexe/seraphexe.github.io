@@ -172,10 +172,10 @@ a.karta:focus-visible {
     font-size: 0.85em;
 }
 
-/* Wymiary: metry | lub | kabinety */
+/* Wymiary: metry | kabinety */
 .wymiary {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 0 24px;
     align-items: center;
 }
@@ -183,11 +183,6 @@ a.karta:focus-visible {
 .wymiar-tytul {
     color: #ffffff;
     margin-bottom: 0;
-}
-
-.wymiar-lub {
-    color: #008f11;
-    text-align: center;
 }
 
 .wymiar-kolumna input {
@@ -233,20 +228,4 @@ a.karta:focus-visible {
 .dane small {
     color: #008f11;
     font-weight: normal;
-}
-
-/* Wyjaśnienie obliczeń (rozwijane) */
-.wyjasnienie {
-    margin-top: 30px;
-    border-top: 1px solid #008f11;
-    padding-top: 10px;
-}
-
-.wyjasnienie summary {
-    color: #ffffff;
-    cursor: pointer;
-}
-
-.wyjasnienie strong {
-    color: #ffffff;
 }

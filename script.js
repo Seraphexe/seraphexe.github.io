@@ -13,6 +13,12 @@ const OBCIAZENIE_LINII = 0.8;
 // Limit z praktyki: prąd rozruchowy przy włączaniu (16 kabinetów P1.9 wybiło bezpiecznik)
 const MAX_KAB_NA_LINIE = 15;
 
+// Procesory (wg kart producenta)
+const PROCESORY = {
+    "vx1000pro": { nazwa: "VX1000 Pro", porty: 10, maxPikseli: 6500000, maxSzer: 10240, maxWys: 8192 },
+    "mctrl4k": { nazwa: "MCTRL4K", porty: 16, maxPikseli: 3840 * 2160, maxSzer: 3840, maxWys: 2160 },
+};
+
 // Dane kabinetów 500 x 500 mm dla znanych pitchy.
 // waga [kg] i moc [W] na jeden kabinet; null = brak danych
 const KABINETY = {
@@ -63,7 +69,24 @@ function przylacze(watow) {
 }
 
 // Buduje opis wyniku
-function opisEkranu(poziom, pion, dane, odswiezanie) {
+// Ile procesorów potrzeba i czy coś przekracza ich limity
+function opisProcesora(proc, szerPx, wysPx, kableLan) {
+    const zPortow = Math.ceil(kableLan / proc.porty);
+    const zPikseli = Math.ceil((szerPx * wysPx) / proc.maxPikseli);
+    const zWymiarow = Math.ceil(szerPx / proc.maxSzer) * Math.ceil(wysPx / proc.maxWys);
+    const ile = Math.max(zPortow, zPikseli, zWymiarow);
+
+    let uwaga = "";
+    if (szerPx > proc.maxSzer) uwaga = `szerokość ponad ${proc.maxSzer} px`;
+    else if (wysPx > proc.maxWys) uwaga = `wysokość ponad ${proc.maxWys} px`;
+    else if (zPikseli > 1) uwaga = `ponad ${zaokr(proc.maxPikseli / 1000000)} mln px`;
+    else if (zPortow > 1) uwaga = `ponad ${proc.porty} portów`;
+
+    if (ile === 1) return `1 × ${proc.nazwa} <small>(${proc.porty} portów)</small>`;
+    return `${ile} × ${proc.nazwa} <small>(${proc.porty} portów każdy; ${uwaga})</small>`;
+}
+
+function opisEkranu(poziom, pion, dane, odswiezanie, proc) {
     const sztuk = poziom * pion;
     const szerPx = poziom * dane.piksele;
     const wysPx = pion * dane.piksele;
@@ -84,14 +107,14 @@ function opisEkranu(poziom, pion, dane, odswiezanie) {
         // Bierzemy mniejszą liczbę: z mocy albo limit z praktyki (rozruch)
         const kabNaLinie = Math.max(1, Math.min(zMocy, MAX_KAB_NA_LINIE));
         const kableZas = Math.ceil(sztuk / kabNaLinie);
-        zasilanie = `${kableZas} <small>(do ${kabNaLinie} kab. na kabel 16 A, włączaj po kolei)</small>`;
+        zasilanie = `${kableZas} <small>(do ${kabNaLinie} kab. na kabel 16 A)</small>`;
         moc = `${zaokr(watow / 1000)} kW`;
         zasilaniePrzylacze = przylacze(watow);
     }
 
     let waga = "brak danych";
     if (dane.waga !== null) {
-        waga = `${zaokr(sztuk * dane.waga)} kg <small>(same kabinety)</small>`;
+        waga = `${zaokr(sztuk * dane.waga)} kg`;
     }
 
     return `
@@ -106,13 +129,14 @@ function opisEkranu(poziom, pion, dane, odswiezanie) {
                 </dl>
             </div>
             <div class="wynik-blok">
-                <h3>Na wyjazd</h3>
+                <h3>Sprzęt</h3>
                 <dl class="dane">
+                    <dt>Procesor</dt><dd>${opisProcesora(proc, szerPx, wysPx, kableLan)}</dd>
                     <dt>Kable LAN z procesora</dt><dd>${kableLan} <small>(do ${kabNaPort} kab. na port, ${poPolsku(odswiezanie)} Hz)</small></dd>
                     <dt>Kable zasilające</dt><dd>${zasilanie}</dd>
                     <dt>Moc maks.</dt><dd>${moc}</dd>
                     <dt>Przyłącze</dt><dd>${zasilaniePrzylacze}</dd>
-                    <dt>Waga</dt><dd>${waga}</dd>
+                    <dt>Waga kabinetów</dt><dd>${waga}</dd>
                 </dl>
             </div>
         </div>
@@ -184,5 +208,6 @@ przycisk.addEventListener("click", function () {
 
     // 4. Wynik
     const odswiezanie = Number(document.getElementById("odswiezanie").value);
-    wynik.innerHTML = opisEkranu(poziom, pion, daneKabinetu(pitch), odswiezanie);
+    const proc = PROCESORY[document.getElementById("procesor").value];
+    wynik.innerHTML = opisEkranu(poziom, pion, daneKabinetu(pitch), odswiezanie, proc);
 });
