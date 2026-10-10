@@ -312,3 +312,102 @@ select {
 .mini-check input {
     accent-color: var(--akcent);
 }
+
+/* ----- Zakładki ścianek ----- */
+.zakladki {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 20px;
+}
+
+.zakladka {
+    font: inherit;
+    font-size: 15px;
+    color: var(--tekst-slaby);
+    background: var(--panel);
+    border: 1px solid var(--linia);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.zakladka.aktywna {
+    color: var(--akcent);
+    border-color: var(--akcent);
+    background: var(--akcent-ciemny);
+}
+
+.zakladka.dodaj {
+    border-style: dashed;
+}
+
+.nazwa-wiersz {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0 0;
+}
+
+.nazwa-wiersz input {
+    flex: 1;
+    min-width: 0;
+}
+
+.usun {
+    font: inherit;
+    font-size: 14px;
+    color: var(--tekst-slaby);
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.usun:hover {
+    color: #ff6b6b;
+}
+
+.wynik-blok > .mini-check {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--linia);
+    display: block;
+}
+
+/* ----- Podsumowanie ----- */
+.podsumowanie-tytul {
+    margin: 36px 0 12px;
+    font-size: 1.3em;
+}
+
+.tabela-wrap {
+    overflow-x: auto;
+}
+
+.tabela {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--cyfry);
+    font-size: 0.9em;
+}
+
+.tabela th,
+.tabela td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--linia);
+    white-space: nowrap;
+}
+
+.tabela th {
+    color: var(--tekst-slaby);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: normal;
+}
+
+.podsumowanie-notka {
+    color: var(--tekst-slaby);
+    font-size: 0.85em;
+}
+

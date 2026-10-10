@@ -68,84 +68,138 @@ function przylacze(watow) {
     return `ponad 63 A! ok. ${Math.ceil(naFaze)} A na fazę`;
 }
 
-// Buduje opis wyniku
-// Ile sztuk danego procesora potrzeba (porty, łączna liczba pikseli, szerokość i wysokość)
-function ileProcesorow(proc, szerPx, wysPx, kableLan) {
-    const zPortow = Math.ceil(kableLan / proc.porty);
-    const zPikseli = Math.ceil((szerPx * wysPx) / proc.maxPikseli);
-    const zWymiarow = Math.ceil(szerPx / proc.maxSzer) * Math.ceil(wysPx / proc.maxWys);
+// ===== Procesory =====
+
+// Ile sztuk procesora potrzeba. x = { porty, pikseli, uklady: [[szer, wys], ...] }
+// "uklady" to możliwe ułożenia obrazu (np. ścianki jedna pod drugą albo obok siebie) — bierzemy najlepsze
+function ileProcesorow(proc, x) {
+    const zPortow = Math.ceil(x.porty / proc.porty);
+    const zPikseli = Math.ceil(x.pikseli / proc.maxPikseli);
+    const zWymiarow = Math.min.apply(null, x.uklady.map(function (u) {
+        return Math.ceil(u[0] / proc.maxSzer) * Math.ceil(u[1] / proc.maxWys);
+    }));
     return Math.max(zPortow, zPikseli, zWymiarow);
 }
 
 // Opis procesora: wybrany ręcznie albo dobrany automatycznie (najmniej sztuk)
-function opisProcesora(wybor, szerPx, wysPx, kableLan) {
+// idListy = id małej listy wyboru (null = bez listy, zawsze auto)
+function opisProcesora(wybor, x, idListy) {
     const lista = Object.keys(PROCESORY).map(function (klucz) {
-        const proc = PROCESORY[klucz];
-        return { klucz: klucz, proc: proc, ile: ileProcesorow(proc, szerPx, wysPx, kableLan) };
+        return { klucz: klucz, proc: PROCESORY[klucz], ile: ileProcesorow(PROCESORY[klucz], x) };
     });
     let najlepszy = lista[0];
-    lista.forEach(function (x) { if (x.ile < najlepszy.ile) najlepszy = x; });
+    lista.forEach(function (p) { if (p.ile < najlepszy.ile) najlepszy = p; });
 
-    const wybrany = wybor === "auto" ? najlepszy : lista.find(function (x) { return x.klucz === wybor; });
+    const wybrany = wybor === "auto" ? najlepszy : lista.find(function (p) { return p.klucz === wybor; });
 
-    // Lista do zmiany procesora (domyślnie: dobór automatyczny)
-    const opcje = [`<option value="auto"${wybor === "auto" ? " selected" : ""}>auto</option>`]
-        .concat(lista.map(function (x) {
-            return `<option value="${x.klucz}"${wybor === x.klucz ? " selected" : ""}>${x.proc.nazwa}</option>`;
-        })).join("");
-    const lista_html = `<select class="mini-wybor" id="procesor" aria-label="Procesor">${opcje}</select>`;
+    let listaHtml = "";
+    if (idListy) {
+        const opcje = [`<option value="auto"${wybor === "auto" ? " selected" : ""}>auto</option>`]
+            .concat(lista.map(function (p) {
+                return `<option value="${p.klucz}"${wybor === p.klucz ? " selected" : ""}>${p.proc.nazwa}</option>`;
+            })).join("");
+        listaHtml = ` <select class="mini-wybor" id="${idListy}" aria-label="Procesor">${opcje}</select>`;
+    }
 
-    const wszystkiePorty = wybrany.ile * wybrany.proc.porty;
-    let tekst = `${wybrany.ile} × ${wybrany.proc.nazwa} ${lista_html}<br><small>zajęte porty: ${kableLan} z ${wszystkiePorty}</small>`;
-
-    // Podpowiedź, gdy wybrany ręcznie procesor nie wystarcza, a inny tak
+    let tekst = `${wybrany.ile} × ${wybrany.proc.nazwa}${listaHtml}<br><small>zajęte porty: ${x.porty} z ${wybrany.ile * wybrany.proc.porty}</small>`;
     if (wybor !== "auto" && najlepszy.ile < wybrany.ile) {
         tekst += `<br><small>Lepiej: ${najlepszy.ile} × ${najlepszy.proc.nazwa} (${najlepszy.proc.porty} portów)</small>`;
     }
     return tekst;
 }
 
-function opisEkranu(poziom, pion, dane, odswiezanie, wyborProcesora) {
+// ===== Ścianki =====
+
+const ODSWIEZANIA = [29.97, 30, 50, 60, 100, 120];
+
+let sciany = [];
+let aktywna = 0;
+
+function nowaSciana(wzor) {
+    return {
+        nazwa: `Ścianka ${sciany.length + 1}`,
+        poziom: "",
+        pion: "",
+        pitch: wzor ? wzor.pitch : "1.9",
+        pitchWlasny: wzor ? wzor.pitchWlasny : "",
+        hz: wzor ? wzor.hz : 60,
+        backup: false,
+        procesor: "auto",
+        wspolnyProc: true,
+        wspolneZas: true,
+        obliczona: false,
+    };
+}
+
+function pitchSciany(w) {
+    return w.pitch === "inny" ? liczba(w.pitchWlasny) : Number(w.pitch);
+}
+
+// Wszystkie obliczenia dla jednej ścianki (same liczby, bez HTML)
+function obliczSciane(w) {
+    const poziom = Number(w.poziom);
+    const pion = Number(w.pion);
+    const pitch = pitchSciany(w);
+    if (!(poziom > 0) || !(pion > 0) || !Number.isInteger(poziom) || !Number.isInteger(pion)) {
+        return { blad: "Podaj wymiar ekranu (albo ilość kabinetów w liczbach całkowitych)." };
+    }
+    if (!(pitch > 0)) return { blad: "Wybierz albo wpisz pitch." };
+
+    const dane = daneKabinetu(pitch);
     const sztuk = poziom * pion;
     const szerPx = poziom * dane.piksele;
     const wysPx = pion * dane.piksele;
 
-    // LAN: ile pełnych kabinetów mieści się na jednym porcie
-    // Wyższe odświeżanie = mniej pikseli na port (np. 120 Hz -> połowa)
-    const pikseliNaPort = PIKSELE_NA_PORT_60HZ * 60 / odswiezanie;
+    // LAN: wyższe odświeżanie = mniej pikseli na port; backup = drugi kabel na każdą linię
+    const pikseliNaPort = PIKSELE_NA_PORT_60HZ * 60 / w.hz;
     const kabNaPort = Math.max(1, Math.floor(pikseliNaPort / (dane.piksele * dane.piksele)));
     const linieLan = Math.ceil(sztuk / kabNaPort);
-    // Backup: każda linia ma drugi kabel (i zajmuje drugi port)
-    const kableLan = backupLan ? linieLan * 2 : linieLan;
-    const opisLan = backupLan
-        ? `${kableLan} ${wyborOdswiezania(odswiezanie)} <small>(${linieLan} linii × 2, do ${kabNaPort} kab. na port)</small>`
-        : `${kableLan} ${wyborOdswiezania(odswiezanie)} <small>(do ${kabNaPort} kab. na port)</small>`;
+    const kableLan = w.backup ? linieLan * 2 : linieLan;
 
-    let zasilanie = "brak danych o mocy";
-    let moc = "brak danych";
-    let zasilaniePrzylacze = "brak danych";
+    // Zasilanie: mniejsza liczba z mocy (16 A × 80%) albo z praktyki (rozruch)
+    let watow = null, kableZas = null, kabNaLinie = null;
     if (dane.moc !== null) {
-        const watow = sztuk * dane.moc;
-        // Z mocy: 16 A x 80% x 230 V = 2944 W na kabel; dla P1.9 (110 W) -> 26 kabinetów
+        watow = sztuk * dane.moc;
         const zMocy = Math.floor((BEZPIECZNIK_LINII_A * OBCIAZENIE_LINII * NAPIECIE_V) / dane.moc);
-        // Bierzemy mniejszą liczbę: z mocy albo limit z praktyki (rozruch)
-        const kabNaLinie = Math.max(1, Math.min(zMocy, MAX_KAB_NA_LINIE));
-        const kableZas = Math.ceil(sztuk / kabNaLinie);
-        zasilanie = `${kableZas} <small>(do ${kabNaLinie} kab. na kabel 16 A)</small>`;
-        moc = `${zaokr(watow / 1000)} kW`;
-        zasilaniePrzylacze = przylacze(watow);
+        kabNaLinie = Math.max(1, Math.min(zMocy, MAX_KAB_NA_LINIE));
+        kableZas = Math.ceil(sztuk / kabNaLinie);
     }
+    const waga = dane.waga !== null ? sztuk * dane.waga : null;
 
-    let waga = "brak danych";
-    if (dane.waga !== null) {
-        waga = `${zaokr(sztuk * dane.waga)} kg`;
-    }
+    return { poziom, pion, sztuk, dane, szerPx, wysPx, kabNaPort, linieLan, kableLan, watow, kableZas, kabNaLinie, waga };
+}
 
-    // Podgląd kształtu: prostokąt w proporcjach ekranu z siatką kabinetów (maks. 220 px wysokości)
+function wyborOdswiezania(aktualne) {
+    const opcje = ODSWIEZANIA.map(function (hz) {
+        return `<option value="${hz}"${hz === aktualne ? " selected" : ""}>${poPolsku(hz)} Hz</option>`;
+    }).join("");
+    return `<select class="mini-wybor" id="odswiezanie" aria-label="Odświeżanie">${opcje}</select>`;
+}
+
+function zaznaczenie(id, opis, wlaczone) {
+    return `<label class="mini-check"><input type="checkbox" id="${id}"${wlaczone ? " checked" : ""}> ${opis}</label>`;
+}
+
+// Wyniki aktywnej ścianki
+function htmlSciany(w) {
+    const r = obliczSciane(w);
+    if (r.blad) return `<p>${r.blad}</p>`;
+
+    const kilka = sciany.length > 1;
+    const opisLan = w.backup
+        ? `${r.kableLan} ${wyborOdswiezania(w.hz)} <small>(${r.linieLan} linii × 2, do ${r.kabNaPort} kab. na port)</small>`
+        : `${r.kableLan} ${wyborOdswiezania(w.hz)} <small>(do ${r.kabNaPort} kab. na port)</small>`;
+    const proc = opisProcesora(w.procesor, { porty: r.kableLan, pikseli: r.szerPx * r.wysPx, uklady: [[r.szerPx, r.wysPx]] }, "procesor");
+
+    const zasilanie = r.kableZas !== null ? `${r.kableZas} <small>(do ${r.kabNaLinie} kab. na kabel 16 A)</small>` : "brak danych o mocy";
+    const moc = r.watow !== null ? `${zaokr(r.watow / 1000)} kW` : "brak danych";
+    const przyl = r.watow !== null ? przylacze(r.watow) : "brak danych";
+    const waga = r.waga !== null ? `${zaokr(r.waga)} kg` : "brak danych";
+
     const podglad = `
         <div class="podglad-wrap">
-            <div class="podglad" style="width: min(100%, ${Math.round(220 * poziom / pion)}px); aspect-ratio: ${poziom} / ${pion}; background-size: calc(100% / ${poziom}) calc(100% / ${pion});"></div>
-            <p class="podglad-opis">${poziom} × ${pion} kabinetów · ${poPolsku(poziom * KABINET_M)} × ${poPolsku(pion * KABINET_M)} m · widok rozwinięty</p>
+            <div class="podglad" style="width: min(100%, ${Math.round(220 * r.poziom / r.pion)}px); aspect-ratio: ${r.poziom} / ${r.pion}; background-size: calc(100% / ${r.poziom}) calc(100% / ${r.pion});"></div>
+            <p class="podglad-opis">${r.poziom} × ${r.pion} kabinetów · ${poPolsku(r.poziom * KABINET_M)} × ${poPolsku(r.pion * KABINET_M)} m · widok rozwinięty</p>
         </div>
     `;
 
@@ -154,138 +208,239 @@ function opisEkranu(poziom, pion, dane, odswiezanie, wyborProcesora) {
             <div class="wynik-blok">
                 <h3>Ekran</h3>
                 <dl class="dane">
-                    <dt>Kabinety</dt><dd>${poziom} x ${pion} (${sztuk} szt.)</dd>
-                    <dt>Rozmiar</dt><dd>${poPolsku(poziom * KABINET_M)} x ${poPolsku(pion * KABINET_M)} m</dd>
-                    <dt>Rozdzielczość</dt><dd>${szerPx} x ${wysPx} px</dd>
-                    <dt>Jeden kabinet</dt><dd>${dane.piksele} x ${dane.piksele} px</dd>
+                    <dt>Kabinety</dt><dd>${r.poziom} x ${r.pion} (${r.sztuk} szt.)</dd>
+                    <dt>Rozmiar</dt><dd>${poPolsku(r.poziom * KABINET_M)} x ${poPolsku(r.pion * KABINET_M)} m</dd>
+                    <dt>Rozdzielczość</dt><dd>${r.szerPx} x ${r.wysPx} px</dd>
+                    <dt>Jeden kabinet</dt><dd>${r.dane.piksele} x ${r.dane.piksele} px</dd>
                     <dt>Waga kabinetów</dt><dd>${waga}</dd>
                 </dl>
             </div>
             <div class="wynik-blok">
                 <h3>Sygnał</h3>
                 <dl class="dane">
-                    <dt>Kable LAN z procesora</dt><dd>${opisLan}<br><label class="mini-check"><input type="checkbox" id="backup"${backupLan ? " checked" : ""}> backup (podwójny sygnał)</label></dd>
-                    <dt>Procesor</dt><dd>${opisProcesora(wyborProcesora, szerPx, wysPx, kableLan)}</dd>
+                    <dt>Kable LAN z procesora</dt><dd>${opisLan}<br>${zaznaczenie("backup", "backup (podwójny sygnał)", w.backup)}</dd>
+                    <dt>Procesor</dt><dd>${proc}</dd>
                 </dl>
+                ${kilka ? zaznaczenie("wspolny_proc", "wspólny procesor z innymi ściankami", w.wspolnyProc) : ""}
             </div>
             <div class="wynik-blok">
                 <h3>Zasilanie</h3>
                 <dl class="dane">
                     <dt>Kable zasilające</dt><dd>${zasilanie}</dd>
                     <dt>Moc maks.</dt><dd>${moc}</dd>
-                    <dt>Przyłącze</dt><dd>${zasilaniePrzylacze}</dd>
+                    <dt>Przyłącze</dt><dd>${przyl}</dd>
                 </dl>
+                ${kilka ? zaznaczenie("wspolne_zas", "wspólne zasilanie z innymi ściankami", w.wspolneZas) : ""}
             </div>
         </div>
     `;
 }
 
+// Podsumowanie wszystkich obliczonych ścianek
+function htmlPodsumowania() {
+    const gotowe = sciany
+        .map(function (w) { return { w: w, r: w.obliczona ? obliczSciane(w) : null }; })
+        .filter(function (x) { return x.r && !x.r.blad; });
+    if (sciany.length < 2 || gotowe.length < 2) return "";
+
+    const wiersze = gotowe.map(function (x) {
+        return `<tr><td>${x.w.nazwa}</td><td>${x.r.poziom} × ${x.r.pion}</td><td>${x.r.szerPx} × ${x.r.wysPx}</td><td>${x.r.waga !== null ? zaokr(x.r.waga) + " kg" : "–"}</td></tr>`;
+    }).join("");
+
+    // Wspólny procesor
+    const gProc = gotowe.filter(function (x) { return x.w.wspolnyProc; });
+    let blokProc = "<p><small>Żadna ścianka nie ma zaznaczonego wspólnego procesora.</small></p>";
+    if (gProc.length) {
+        const porty = gProc.reduce(function (s, x) { return s + x.r.kableLan; }, 0);
+        const pikseli = gProc.reduce(function (s, x) { return s + x.r.szerPx * x.r.wysPx; }, 0);
+        const maxSzer = Math.max.apply(null, gProc.map(function (x) { return x.r.szerPx; }));
+        const maxWys = Math.max.apply(null, gProc.map(function (x) { return x.r.wysPx; }));
+        const sumSzer = gProc.reduce(function (s, x) { return s + x.r.szerPx; }, 0);
+        const sumWys = gProc.reduce(function (s, x) { return s + x.r.wysPx; }, 0);
+        // Ścianki na obrazie procesora: jedna pod drugą albo obok siebie
+        const x = { porty: porty, pikseli: pikseli, uklady: [[maxSzer, sumWys], [sumSzer, maxWys]] };
+        blokProc = `
+            <dl class="dane">
+                <dt>Ścianki</dt><dd>${gProc.map(function (g) { return g.w.nazwa; }).join(", ")}</dd>
+                <dt>Kable LAN z procesora</dt><dd>${porty}</dd>
+                <dt>Procesor</dt><dd>${opisProcesora("auto", x, null)}</dd>
+            </dl>`;
+    }
+
+    // Wspólne zasilanie
+    const gZas = gotowe.filter(function (x) { return x.w.wspolneZas; });
+    let blokZas = "<p><small>Żadna ścianka nie ma zaznaczonego wspólnego zasilania.</small></p>";
+    if (gZas.length) {
+        const bezDanych = gZas.filter(function (x) { return x.r.watow === null; });
+        const zDanymi = gZas.filter(function (x) { return x.r.watow !== null; });
+        const kable = zDanymi.reduce(function (s, x) { return s + x.r.kableZas; }, 0);
+        const watow = zDanymi.reduce(function (s, x) { return s + x.r.watow; }, 0);
+        blokZas = `
+            <dl class="dane">
+                <dt>Ścianki</dt><dd>${gZas.map(function (g) { return g.w.nazwa; }).join(", ")}</dd>
+                <dt>Kable zasilające</dt><dd>${zDanymi.length ? kable : "brak danych"}</dd>
+                <dt>Moc maks.</dt><dd>${zDanymi.length ? zaokr(watow / 1000) + " kW" : "brak danych"}</dd>
+                <dt>Przyłącze</dt><dd>${zDanymi.length ? przylacze(watow) : "brak danych"}</dd>
+            </dl>
+            ${bezDanych.length ? `<p><small>Bez danych o mocy: ${bezDanych.map(function (b) { return b.w.nazwa; }).join(", ")}</small></p>` : ""}`;
+    }
+
+    const osobno = gotowe.filter(function (x) { return !x.w.wspolnyProc || !x.w.wspolneZas; });
+    const notkaOsobno = osobno.length
+        ? `<p class="podsumowanie-notka">Osobno liczone: ${osobno.map(function (x) {
+            const co = [];
+            if (!x.w.wspolnyProc) co.push("procesor");
+            if (!x.w.wspolneZas) co.push("zasilanie");
+            return `${x.w.nazwa} (${co.join(", ")})`;
+        }).join("; ")} — szczegóły w wynikach danej ścianki.</p>`
+        : "";
+
+    return `
+        <h2 class="podsumowanie-tytul">Podsumowanie</h2>
+        <div class="tabela-wrap">
+            <table class="tabela">
+                <thead><tr><th>Ścianka</th><th>Kabinety</th><th>Rozdzielczość</th><th>Waga</th></tr></thead>
+                <tbody>${wiersze}</tbody>
+            </table>
+        </div>
+        <div class="wyniki">
+            <div class="wynik-blok"><h3>Wspólny procesor</h3>${blokProc}</div>
+            <div class="wynik-blok"><h3>Wspólne zasilanie</h3>${blokZas}</div>
+        </div>
+        ${notkaOsobno}
+    `;
+}
+
+// ===== Formularz i widok =====
+
 const listaSzerokosc = document.getElementById("szerokosc_m");
 const listaWysokosc = document.getElementById("wysokosc_m");
-const przycisk = document.getElementById("oblicz");
-const wynik = document.getElementById("wynik");
+const poleKabPoziom = document.getElementById("kabinety_poziom");
+const poleKabPion = document.getElementById("kabinety_pion");
+const polePitchWlasny = document.getElementById("pitch_wlasny");
+const poleNazwa = document.getElementById("nazwa_sciany");
 const pitchWlasnyBlok = document.getElementById("pitch_wlasny_blok");
 const kafelkiPitch = document.querySelectorAll('input[name="pitch"]');
+const zakladki = document.getElementById("zakladki");
+const przycisk = document.getElementById("oblicz");
+const przyciskUsun = document.getElementById("usun_sciane");
+const wynik = document.getElementById("wynik");
+const podsumowanie = document.getElementById("podsumowanie");
 
 wypelnijRozmiary(listaSzerokosc);
 wypelnijRozmiary(listaWysokosc);
 
-// Synchronizacja: metry <-> ilość kabinetów (zmiana jednego uzupełnia drugie)
-const poleKabPoziom = document.getElementById("kabinety_poziom");
-const poleKabPion = document.getElementById("kabinety_pion");
-
-function zMetrow(lista, pole) {
-    pole.value = lista.value ? Math.round(Number(lista.value) / KABINET_M) : "";
-    wynik.innerHTML = "";
-    ostatnie = null;
-}
-
-function zKabinetow(pole, lista) {
-    const ile = Number(pole.value);
+function metryZKabinetow(ile) {
     const metry = ile * KABINET_M;
-    lista.value = (Number.isInteger(ile) && ile > 0 && metry <= MAX_ROZMIAR_M) ? String(metry) : "";
-    wynik.innerHTML = "";
-    ostatnie = null;
+    return (Number.isInteger(ile) && ile > 0 && metry <= MAX_ROZMIAR_M) ? String(metry) : "";
 }
 
-listaSzerokosc.addEventListener("change", function () { zMetrow(listaSzerokosc, poleKabPoziom); });
-listaWysokosc.addEventListener("change", function () { zMetrow(listaWysokosc, poleKabPion); });
-poleKabPoziom.addEventListener("input", function () { zKabinetow(poleKabPoziom, listaSzerokosc); });
-poleKabPion.addEventListener("input", function () { zKabinetow(poleKabPion, listaWysokosc); });
+// Wpisuje dane ścianki do formularza
+function wczytajFormularz(w) {
+    poleNazwa.value = w.nazwa;
+    poleKabPoziom.value = w.poziom;
+    poleKabPion.value = w.pion;
+    listaSzerokosc.value = metryZKabinetow(Number(w.poziom));
+    listaWysokosc.value = metryZKabinetow(Number(w.pion));
+    kafelkiPitch.forEach(function (k) { k.checked = k.value === w.pitch; });
+    polePitchWlasny.value = w.pitchWlasny;
+    pitchWlasnyBlok.hidden = w.pitch !== "inny";
+}
 
-// Pokaż pole "własny pitch" tylko po wybraniu kafelka "Inny…"
-kafelkiPitch.forEach(function (kafelek) {
-    kafelek.addEventListener("change", function () {
-        const wybrany = document.querySelector('input[name="pitch"]:checked').value;
-        pitchWlasnyBlok.hidden = wybrany !== "inny";
-    });
-});
+// Odczytuje formularz do aktywnej ścianki
+function zapiszFormularz() {
+    const w = sciany[aktywna];
+    w.nazwa = poleNazwa.value.trim() || `Ścianka ${aktywna + 1}`;
+    w.poziom = poleKabPoziom.value;
+    w.pion = poleKabPion.value;
+    w.pitch = document.querySelector('input[name="pitch"]:checked').value;
+    w.pitchWlasny = polePitchWlasny.value;
+    pitchWlasnyBlok.hidden = w.pitch !== "inny";
+}
 
-// Mały przełącznik odświeżania przy kablach LAN
-const ODSWIEZANIA = [29.97, 30, 50, 60, 100, 120];
-let odswiezanieHz = 60;
-let procesorWybor = "auto";
-let backupLan = false;
-
-function wyborOdswiezania(aktualne) {
-    const opcje = ODSWIEZANIA.map(function (hz) {
-        const zaznaczone = hz === aktualne ? " selected" : "";
-        return `<option value="${hz}"${zaznaczone}>${poPolsku(hz)} Hz</option>`;
+function pokazZakladki() {
+    const przyciski = sciany.map(function (w, i) {
+        return `<button type="button" class="zakladka${i === aktywna ? " aktywna" : ""}" data-nr="${i}">${w.nazwa}</button>`;
     }).join("");
-    return `<select class="mini-wybor" id="odswiezanie" aria-label="Odświeżanie">${opcje}</select>`;
+    zakladki.innerHTML = przyciski + `<button type="button" class="zakladka dodaj" id="dodaj_sciane">+ dodaj ściankę</button>`;
+    przyciskUsun.hidden = sciany.length < 2;
 }
 
-// Ostatnio obliczony ekran (żeby zmiana ustawień sprzętu od razu przeliczała wynik)
-let ostatnie = null;
-
-function pokazWynik() {
-    if (!ostatnie) return;
-    const odswiezanie = odswiezanieHz;
-    const wyborProcesora = procesorWybor;
-    wynik.innerHTML = opisEkranu(ostatnie.poziom, ostatnie.pion, ostatnie.dane, odswiezanie, wyborProcesora);
+function pokazWszystko() {
+    pokazZakladki();
+    const w = sciany[aktywna];
+    wynik.innerHTML = w.obliczona ? htmlSciany(w) : "";
+    podsumowanie.innerHTML = htmlPodsumowania();
 }
 
-// Przełącznik odświeżania jest w wyniku, więc nasłuchujemy zmian na całym bloku wyniku
-wynik.addEventListener("change", function (e) {
-    if (e.target.id === "odswiezanie") {
-        odswiezanieHz = Number(e.target.value);
-        pokazWynik();
-    }
-    if (e.target.id === "backup") {
-        backupLan = e.target.checked;
-        pokazWynik();
-    }
-    if (e.target.id === "procesor") {
-        procesorWybor = e.target.value;
-        pokazWynik();
-    }
+// Zmiana w formularzu -> zapis i (jeśli już liczona) od razu nowy wynik
+function poZmianie() {
+    zapiszFormularz();
+    pokazWszystko();
+}
+
+listaSzerokosc.addEventListener("change", function () {
+    poleKabPoziom.value = listaSzerokosc.value ? Math.round(Number(listaSzerokosc.value) / KABINET_M) : "";
+    poZmianie();
 });
+listaWysokosc.addEventListener("change", function () {
+    poleKabPion.value = listaWysokosc.value ? Math.round(Number(listaWysokosc.value) / KABINET_M) : "";
+    poZmianie();
+});
+poleKabPoziom.addEventListener("input", function () {
+    listaSzerokosc.value = metryZKabinetow(Number(poleKabPoziom.value));
+    poZmianie();
+});
+poleKabPion.addEventListener("input", function () {
+    listaWysokosc.value = metryZKabinetow(Number(poleKabPion.value));
+    poZmianie();
+});
+kafelkiPitch.forEach(function (k) { k.addEventListener("change", poZmianie); });
+polePitchWlasny.addEventListener("input", poZmianie);
+poleNazwa.addEventListener("input", poZmianie);
 
 przycisk.addEventListener("click", function () {
-    // 1. Ilość kabinetów (pola kabinetów są zawsze uzupełnione, także po wyborze metrów)
-    const poziom = Number(poleKabPoziom.value);
-    const pion = Number(poleKabPion.value);
-
-    // 2. Pitch
-    const wybrany = document.querySelector('input[name="pitch"]:checked').value;
-    let pitch;
-    if (wybrany === "inny") {
-        pitch = liczba(document.getElementById("pitch_wlasny").value);
-    } else {
-        pitch = Number(wybrany);
-    }
-
-    // 3. Sprawdzenie danych
-    if (!(poziom > 0) || !(pion > 0) || !Number.isInteger(poziom) || !Number.isInteger(pion)) {
-        wynik.innerHTML = "<p>Podaj wymiar ekranu (albo ilość kabinetów w liczbach całkowitych).</p>";
-        return;
-    }
-    if (!(pitch > 0)) {
-        wynik.innerHTML = "<p>Wybierz albo wpisz pitch.</p>";
-        return;
-    }
-
-    // 4. Wynik
-    ostatnie = { poziom: poziom, pion: pion, dane: daneKabinetu(pitch) };
-    pokazWynik();
+    zapiszFormularz();
+    sciany[aktywna].obliczona = true;
+    pokazWszystko();
 });
+
+// Zakładki: przełączanie i dodawanie ścianek
+zakladki.addEventListener("click", function (e) {
+    const cel = e.target.closest("button");
+    if (!cel) return;
+    zapiszFormularz();
+    if (cel.id === "dodaj_sciane") {
+        sciany.push(nowaSciana(sciany[aktywna]));
+        aktywna = sciany.length - 1;
+    } else {
+        aktywna = Number(cel.dataset.nr);
+    }
+    wczytajFormularz(sciany[aktywna]);
+    pokazWszystko();
+});
+
+przyciskUsun.addEventListener("click", function () {
+    if (sciany.length < 2) return;
+    sciany.splice(aktywna, 1);
+    aktywna = Math.max(0, aktywna - 1);
+    wczytajFormularz(sciany[aktywna]);
+    pokazWszystko();
+});
+
+// Małe przełączniki w wynikach (odświeżanie, backup, procesor, wspólne)
+wynik.addEventListener("change", function (e) {
+    const w = sciany[aktywna];
+    const id = e.target.id;
+    if (id === "odswiezanie") w.hz = Number(e.target.value);
+    if (id === "backup") w.backup = e.target.checked;
+    if (id === "procesor") w.procesor = e.target.value;
+    if (id === "wspolny_proc") w.wspolnyProc = e.target.checked;
+    if (id === "wspolne_zas") w.wspolneZas = e.target.checked;
+    pokazWszystko();
+});
+
+// Start: jedna ścianka
+sciany.push(nowaSciana(null));
+wczytajFormularz(sciany[0]);
+pokazWszystko();
