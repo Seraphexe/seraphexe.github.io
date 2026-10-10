@@ -84,36 +84,36 @@ function opisEkranu(poziom, pion, dane, odswiezanie) {
         // Bierzemy mniejszą liczbę: z mocy albo limit z praktyki (rozruch)
         const kabNaLinie = Math.max(1, Math.min(zMocy, MAX_KAB_NA_LINIE));
         const kableZas = Math.ceil(sztuk / kabNaLinie);
-        zasilanie = `<strong>${kableZas}</strong> (do ${kabNaLinie} kabinetów na kabel 16 A, włączaj linie po kolei)`;
+        zasilanie = `${kableZas} <small>(do ${kabNaLinie} kab. na kabel 16 A, włączaj po kolei)</small>`;
         moc = `${zaokr(watow / 1000)} kW`;
         zasilaniePrzylacze = przylacze(watow);
     }
 
     let waga = "brak danych";
     if (dane.waga !== null) {
-        waga = `${zaokr(sztuk * dane.waga)} kg (same kabinety)`;
+        waga = `${zaokr(sztuk * dane.waga)} kg <small>(same kabinety)</small>`;
     }
 
     return `
         <div class="wyniki">
             <div class="wynik-blok">
                 <h3>Ekran</h3>
-                <p>
-                    Kabinety: <strong>${poziom} x ${pion}</strong> (${sztuk} szt.)<br>
-                    Rozmiar: <strong>${poPolsku(poziom * KABINET_M)} x ${poPolsku(pion * KABINET_M)} m</strong><br>
-                    Rozdzielczość: <strong>${szerPx} x ${wysPx} px</strong><br>
-                    Jeden kabinet: ${dane.piksele} x ${dane.piksele} px
-                </p>
+                <dl class="dane">
+                    <dt>Kabinety</dt><dd>${poziom} x ${pion} (${sztuk} szt.)</dd>
+                    <dt>Rozmiar</dt><dd>${poPolsku(poziom * KABINET_M)} x ${poPolsku(pion * KABINET_M)} m</dd>
+                    <dt>Rozdzielczość</dt><dd>${szerPx} x ${wysPx} px</dd>
+                    <dt>Jeden kabinet</dt><dd>${dane.piksele} x ${dane.piksele} px</dd>
+                </dl>
             </div>
             <div class="wynik-blok">
                 <h3>Na wyjazd</h3>
-                <p>
-                    Kable LAN z procesora: <strong>${kableLan}</strong> (do ${kabNaPort} kabinetów na port przy ${poPolsku(odswiezanie)} Hz)<br>
-                    Kable zasilające: ${zasilanie}<br>
-                    Moc maks.: ${moc}<br>
-                    Przyłącze: ${zasilaniePrzylacze}<br>
-                    Waga: ${waga}
-                </p>
+                <dl class="dane">
+                    <dt>Kable LAN z procesora</dt><dd>${kableLan} <small>(do ${kabNaPort} kab. na port, ${poPolsku(odswiezanie)} Hz)</small></dd>
+                    <dt>Kable zasilające</dt><dd>${zasilanie}</dd>
+                    <dt>Moc maks.</dt><dd>${moc}</dd>
+                    <dt>Przyłącze</dt><dd>${zasilaniePrzylacze}</dd>
+                    <dt>Waga</dt><dd>${waga}</dd>
+                </dl>
             </div>
         </div>
     `;

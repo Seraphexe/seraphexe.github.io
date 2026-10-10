@@ -172,11 +172,12 @@ a.karta:focus-visible {
     font-size: 0.85em;
 }
 
-/* Wymiary: metry i kabinety obok siebie */
+/* Wymiary: metry | lub | kabinety */
 .wymiary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 0 20px;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0 24px;
+    align-items: center;
 }
 
 .wymiar-tytul {
@@ -184,14 +185,25 @@ a.karta:focus-visible {
     margin-bottom: 0;
 }
 
+.wymiar-lub {
+    color: #008f11;
+    text-align: center;
+}
+
 .wymiar-kolumna input {
     width: 6em;
+}
+
+@media (max-width: 560px) {
+    .wymiary {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Wyniki w dwóch blokach */
 .wyniki {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 12px;
     margin-top: 20px;
 }
@@ -199,11 +211,28 @@ a.karta:focus-visible {
 .wynik-blok {
     border: 1px solid #008f11;
     border-radius: 6px;
-    padding: 0 14px;
+    padding: 0 14px 14px;
 }
 
-.wynik-blok strong {
+/* Lista danych: etykieta (zielona) nad wartością (biała) */
+.dane {
+    margin: 0;
+}
+
+.dane dt {
+    color: #00cc33;
+    margin-top: 8px;
+}
+
+.dane dd {
+    margin: 0;
     color: #ffffff;
+    font-weight: bold;
+}
+
+.dane small {
+    color: #008f11;
+    font-weight: normal;
 }
 
 /* Wyjaśnienie obliczeń (rozwijane) */
