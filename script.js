@@ -15,8 +15,8 @@ const MAX_KAB_NA_LINIE = 15;
 
 // Procesory (wg kart producenta)
 const PROCESORY = {
-    "vx1000pro": { nazwa: "VX1000 Pro", porty: 10, maxPikseli: 6500000, maxSzer: 10240, maxWys: 8192 },
     "mctrl4k": { nazwa: "MCTRL4K", porty: 16, maxPikseli: 3840 * 2160, maxSzer: 3840, maxWys: 2160 },
+    "vx1000pro": { nazwa: "VX1000 Pro", porty: 10, maxPikseli: 6500000, maxSzer: 10240, maxWys: 8192 },
 };
 
 // Dane kabinetów 500 x 500 mm dla znanych pitchy.
@@ -216,7 +216,7 @@ kafelkiPitch.forEach(function (kafelek) {
 // Mały przełącznik odświeżania przy kablach LAN
 const ODSWIEZANIA = [29.97, 30, 50, 60, 100, 120];
 let odswiezanieHz = 60;
-let procesorWybor = "auto";
+let procesorWybor = "mctrl4k"; // domyślnie MCTRL4K (najczęściej używany)
 let backupLan = false;
 
 function wyborOdswiezania(aktualne) {
