@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elektromat – Seraphexe</title>
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=9">
 </head>
 
 <body>
@@ -75,32 +75,25 @@
         <input type="text" inputmode="decimal" id="pitch_wlasny" placeholder="np. 4,8">
     </p>
 
-    <p>
-        <label for="odswiezanie">Odświeżanie:</label>
-        <select id="odswiezanie">
-            <option value="29.97">29,97 Hz</option>
-            <option value="30">30 Hz</option>
-            <option value="50">50 Hz</option>
-            <option value="60" selected>60 Hz</option>
-            <option value="100">100 Hz</option>
-            <option value="120">120 Hz</option>
-        </select>
-    </p>
-
-    <p>
-        <label for="procesor">Procesor:</label>
-        <select id="procesor">
-            <option value="vx1000pro">VX1000 Pro (10 portów)</option>
-            <option value="mctrl4k">MCTRL4K (16 portów)</option>
-        </select>
-    </p>
-
     <button id="oblicz">Oblicz</button>
 
     <div id="wynik"></div>
 
+    <div class="ustawienia">
+        <h3>Ustawienia sprzętu</h3>
 
-    <script src="script.js?v=13"></script>
+        <p>
+            <label for="procesor">Procesor:</label>
+            <select id="procesor">
+                <option value="auto" selected>Dobierz automatycznie</option>
+                <option value="vx1000pro">VX1000 Pro (10 portów)</option>
+                <option value="mctrl4k">MCTRL4K (16 portów)</option>
+            </select>
+        </p>
+    </div>
+
+
+    <script src="script.js?v=15"></script>
 </body>
 
 </html>

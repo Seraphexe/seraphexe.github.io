@@ -69,24 +69,36 @@ function przylacze(watow) {
 }
 
 // Buduje opis wyniku
-// Ile procesorów potrzeba i czy coś przekracza ich limity
-function opisProcesora(proc, szerPx, wysPx, kableLan) {
+// Ile sztuk danego procesora potrzeba (porty, łączna liczba pikseli, szerokość i wysokość)
+function ileProcesorow(proc, szerPx, wysPx, kableLan) {
     const zPortow = Math.ceil(kableLan / proc.porty);
     const zPikseli = Math.ceil((szerPx * wysPx) / proc.maxPikseli);
     const zWymiarow = Math.ceil(szerPx / proc.maxSzer) * Math.ceil(wysPx / proc.maxWys);
-    const ile = Math.max(zPortow, zPikseli, zWymiarow);
-
-    let uwaga = "";
-    if (szerPx > proc.maxSzer) uwaga = `szerokość ponad ${proc.maxSzer} px`;
-    else if (wysPx > proc.maxWys) uwaga = `wysokość ponad ${proc.maxWys} px`;
-    else if (zPikseli > 1) uwaga = `ponad ${zaokr(proc.maxPikseli / 1000000)} mln px`;
-    else if (zPortow > 1) uwaga = `ponad ${proc.porty} portów`;
-
-    if (ile === 1) return `1 × ${proc.nazwa} <small>(${proc.porty} portów)</small>`;
-    return `${ile} × ${proc.nazwa} <small>(${proc.porty} portów każdy; ${uwaga})</small>`;
+    return Math.max(zPortow, zPikseli, zWymiarow);
 }
 
-function opisEkranu(poziom, pion, dane, odswiezanie, proc) {
+// Opis procesora: wybrany ręcznie albo dobrany automatycznie (najmniej sztuk)
+function opisProcesora(wybor, szerPx, wysPx, kableLan) {
+    const lista = Object.values(PROCESORY).map(function (proc) {
+        return { proc: proc, ile: ileProcesorow(proc, szerPx, wysPx, kableLan) };
+    });
+    let najlepszy = lista[0];
+    lista.forEach(function (x) { if (x.ile < najlepszy.ile) najlepszy = x; });
+
+    const wybrany = wybor === "auto"
+        ? najlepszy
+        : lista.find(function (x) { return x.proc === PROCESORY[wybor]; });
+
+    let tekst = `${wybrany.ile} × ${wybrany.proc.nazwa} <small>(${wybrany.proc.porty} portów)</small>`;
+
+    // Podpowiedź, gdy wybrany ręcznie procesor nie wystarcza, a inny tak
+    if (wybor !== "auto" && najlepszy.ile < wybrany.ile) {
+        tekst += `<br><small>Lepiej: ${najlepszy.ile} × ${najlepszy.proc.nazwa} (${najlepszy.proc.porty} portów)</small>`;
+    }
+    return tekst;
+}
+
+function opisEkranu(poziom, pion, dane, odswiezanie, wyborProcesora) {
     const sztuk = poziom * pion;
     const szerPx = poziom * dane.piksele;
     const wysPx = pion * dane.piksele;
@@ -131,8 +143,8 @@ function opisEkranu(poziom, pion, dane, odswiezanie, proc) {
             <div class="wynik-blok">
                 <h3>Sprzęt</h3>
                 <dl class="dane">
-                    <dt>Procesor</dt><dd>${opisProcesora(proc, szerPx, wysPx, kableLan)}</dd>
-                    <dt>Kable LAN z procesora</dt><dd>${kableLan} <small>(do ${kabNaPort} kab. na port, ${poPolsku(odswiezanie)} Hz)</small></dd>
+                    <dt>Procesor</dt><dd>${opisProcesora(wyborProcesora, szerPx, wysPx, kableLan)}</dd>
+                    <dt>Kable LAN z procesora</dt><dd>${kableLan} ${wyborOdswiezania(odswiezanie)} <small>(do ${kabNaPort} kab. na port)</small></dd>
                     <dt>Kable zasilające</dt><dd>${zasilanie}</dd>
                     <dt>Moc maks.</dt><dd>${moc}</dd>
                     <dt>Przyłącze</dt><dd>${zasilaniePrzylacze}</dd>
@@ -160,6 +172,7 @@ const poleKabPion = document.getElementById("kabinety_pion");
 function zMetrow(lista, pole) {
     pole.value = lista.value ? Math.round(Number(lista.value) / KABINET_M) : "";
     wynik.innerHTML = "";
+    ostatnie = null;
 }
 
 function zKabinetow(pole, lista) {
@@ -167,6 +180,7 @@ function zKabinetow(pole, lista) {
     const metry = ile * KABINET_M;
     lista.value = (Number.isInteger(ile) && ile > 0 && metry <= MAX_ROZMIAR_M) ? String(metry) : "";
     wynik.innerHTML = "";
+    ostatnie = null;
 }
 
 listaSzerokosc.addEventListener("change", function () { zMetrow(listaSzerokosc, poleKabPoziom); });
@@ -181,6 +195,37 @@ kafelkiPitch.forEach(function (kafelek) {
         pitchWlasnyBlok.hidden = wybrany !== "inny";
     });
 });
+
+// Mały przełącznik odświeżania przy kablach LAN
+const ODSWIEZANIA = [29.97, 30, 50, 60, 100, 120];
+let odswiezanieHz = 60;
+
+function wyborOdswiezania(aktualne) {
+    const opcje = ODSWIEZANIA.map(function (hz) {
+        const zaznaczone = hz === aktualne ? " selected" : "";
+        return `<option value="${hz}"${zaznaczone}>${poPolsku(hz)} Hz</option>`;
+    }).join("");
+    return `<select class="mini-wybor" id="odswiezanie" aria-label="Odświeżanie">${opcje}</select>`;
+}
+
+// Ostatnio obliczony ekran (żeby zmiana ustawień sprzętu od razu przeliczała wynik)
+let ostatnie = null;
+
+function pokazWynik() {
+    if (!ostatnie) return;
+    const odswiezanie = odswiezanieHz;
+    const wyborProcesora = document.getElementById("procesor").value;
+    wynik.innerHTML = opisEkranu(ostatnie.poziom, ostatnie.pion, ostatnie.dane, odswiezanie, wyborProcesora);
+}
+
+// Przełącznik odświeżania jest w wyniku, więc nasłuchujemy zmian na całym bloku wyniku
+wynik.addEventListener("change", function (e) {
+    if (e.target.id === "odswiezanie") {
+        odswiezanieHz = Number(e.target.value);
+        pokazWynik();
+    }
+});
+document.getElementById("procesor").addEventListener("change", pokazWynik);
 
 przycisk.addEventListener("click", function () {
     // 1. Ilość kabinetów (pola kabinetów są zawsze uzupełnione, także po wyborze metrów)
@@ -207,7 +252,6 @@ przycisk.addEventListener("click", function () {
     }
 
     // 4. Wynik
-    const odswiezanie = Number(document.getElementById("odswiezanie").value);
-    const proc = PROCESORY[document.getElementById("procesor").value];
-    wynik.innerHTML = opisEkranu(poziom, pion, daneKabinetu(pitch), odswiezanie, proc);
+    ostatnie = { poziom: poziom, pion: pion, dane: daneKabinetu(pitch) };
+    pokazWynik();
 });

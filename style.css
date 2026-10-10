@@ -229,3 +229,22 @@ a.karta:focus-visible {
     color: #008f11;
     font-weight: normal;
 }
+
+/* Ustawienia sprzętu (pod wynikami) */
+.ustawienia {
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #008f11;
+}
+
+/* Mały przełącznik (np. odświeżanie przy kablach LAN) */
+.mini-wybor {
+    font-family: monospace;
+    font-size: 16px;
+    background-color: #0d0d0d;
+    color: #00ff41;
+    border: 1px solid #008f11;
+    border-radius: 4px;
+    padding: 0 4px;
+    margin-left: 6px;
+}
