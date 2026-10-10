@@ -79,17 +79,24 @@ function ileProcesorow(proc, szerPx, wysPx, kableLan) {
 
 // Opis procesora: wybrany ręcznie albo dobrany automatycznie (najmniej sztuk)
 function opisProcesora(wybor, szerPx, wysPx, kableLan) {
-    const lista = Object.values(PROCESORY).map(function (proc) {
-        return { proc: proc, ile: ileProcesorow(proc, szerPx, wysPx, kableLan) };
+    const lista = Object.keys(PROCESORY).map(function (klucz) {
+        const proc = PROCESORY[klucz];
+        return { klucz: klucz, proc: proc, ile: ileProcesorow(proc, szerPx, wysPx, kableLan) };
     });
     let najlepszy = lista[0];
     lista.forEach(function (x) { if (x.ile < najlepszy.ile) najlepszy = x; });
 
-    const wybrany = wybor === "auto"
-        ? najlepszy
-        : lista.find(function (x) { return x.proc === PROCESORY[wybor]; });
+    const wybrany = wybor === "auto" ? najlepszy : lista.find(function (x) { return x.klucz === wybor; });
 
-    let tekst = `${wybrany.ile} × ${wybrany.proc.nazwa} <small>(${wybrany.proc.porty} portów)</small>`;
+    // Lista do zmiany procesora (domyślnie: dobór automatyczny)
+    const opcje = [`<option value="auto"${wybor === "auto" ? " selected" : ""}>auto</option>`]
+        .concat(lista.map(function (x) {
+            return `<option value="${x.klucz}"${wybor === x.klucz ? " selected" : ""}>${x.proc.nazwa}</option>`;
+        })).join("");
+    const lista_html = `<select class="mini-wybor" id="procesor" aria-label="Procesor">${opcje}</select>`;
+
+    const wszystkiePorty = wybrany.ile * wybrany.proc.porty;
+    let tekst = `${wybrany.ile} × ${wybrany.proc.nazwa} ${lista_html}<br><small>zajęte porty: ${kableLan} z ${wszystkiePorty}</small>`;
 
     // Podpowiedź, gdy wybrany ręcznie procesor nie wystarcza, a inny tak
     if (wybor !== "auto" && najlepszy.ile < wybrany.ile) {
@@ -138,17 +145,22 @@ function opisEkranu(poziom, pion, dane, odswiezanie, wyborProcesora) {
                     <dt>Rozmiar</dt><dd>${poPolsku(poziom * KABINET_M)} x ${poPolsku(pion * KABINET_M)} m</dd>
                     <dt>Rozdzielczość</dt><dd>${szerPx} x ${wysPx} px</dd>
                     <dt>Jeden kabinet</dt><dd>${dane.piksele} x ${dane.piksele} px</dd>
+                    <dt>Waga kabinetów</dt><dd>${waga}</dd>
                 </dl>
             </div>
             <div class="wynik-blok">
-                <h3>Sprzęt</h3>
+                <h3>Sygnał</h3>
                 <dl class="dane">
-                    <dt>Procesor</dt><dd>${opisProcesora(wyborProcesora, szerPx, wysPx, kableLan)}</dd>
                     <dt>Kable LAN z procesora</dt><dd>${kableLan} ${wyborOdswiezania(odswiezanie)} <small>(do ${kabNaPort} kab. na port)</small></dd>
+                    <dt>Procesor</dt><dd>${opisProcesora(wyborProcesora, szerPx, wysPx, kableLan)}</dd>
+                </dl>
+            </div>
+            <div class="wynik-blok">
+                <h3>Zasilanie</h3>
+                <dl class="dane">
                     <dt>Kable zasilające</dt><dd>${zasilanie}</dd>
                     <dt>Moc maks.</dt><dd>${moc}</dd>
                     <dt>Przyłącze</dt><dd>${zasilaniePrzylacze}</dd>
-                    <dt>Waga kabinetów</dt><dd>${waga}</dd>
                 </dl>
             </div>
         </div>
@@ -199,6 +211,7 @@ kafelkiPitch.forEach(function (kafelek) {
 // Mały przełącznik odświeżania przy kablach LAN
 const ODSWIEZANIA = [29.97, 30, 50, 60, 100, 120];
 let odswiezanieHz = 60;
+let procesorWybor = "auto";
 
 function wyborOdswiezania(aktualne) {
     const opcje = ODSWIEZANIA.map(function (hz) {
@@ -214,7 +227,7 @@ let ostatnie = null;
 function pokazWynik() {
     if (!ostatnie) return;
     const odswiezanie = odswiezanieHz;
-    const wyborProcesora = document.getElementById("procesor").value;
+    const wyborProcesora = procesorWybor;
     wynik.innerHTML = opisEkranu(ostatnie.poziom, ostatnie.pion, ostatnie.dane, odswiezanie, wyborProcesora);
 }
 
@@ -224,8 +237,11 @@ wynik.addEventListener("change", function (e) {
         odswiezanieHz = Number(e.target.value);
         pokazWynik();
     }
+    if (e.target.id === "procesor") {
+        procesorWybor = e.target.value;
+        pokazWynik();
+    }
 });
-document.getElementById("procesor").addEventListener("change", pokazWynik);
 
 przycisk.addEventListener("click", function () {
     // 1. Ilość kabinetów (pola kabinetów są zawsze uzupełnione, także po wyborze metrów)
