@@ -116,19 +116,3 @@ a.karta:focus-visible {
     color: #008f11;
     font-size: 0.85em;
 }
-
-/* ===== Podstrony ===== */
-.wstecz {
-    display: inline-block;
-    margin-top: 20px;
-    padding: 4px 12px;
-    border: 1px solid #008f11;
-    border-radius: 6px;
-    text-decoration: none;
-}
-
-.wstecz:hover,
-.wstecz:focus-visible {
-    border-color: #00ff41;
-    background-color: #002b0b;
-}
