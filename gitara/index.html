@@ -2,43 +2,93 @@
 <html lang="pl">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nauka gry na gitarze · Seraphexe</title>
-    <link rel="stylesheet" href="../style.css?v=14">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nauka gry na gitarze · Seraphexe</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Ten sam styl co podkłady: grafit + bursztyn, jak wzmacniacz gitarowy */
+:root{
+  --bg:#eef0f3; --panel:#ffffff; --ink:#1d2430; --muted:#5d6878; --line:#d5dae2;
+  --accent:#d9822b; --accent-ink:#ffffff; --live:#2f7d6d;
+  --display:"Familjen Grotesk",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#141922; --panel:#1d2430; --ink:#e8ecf2; --muted:#9aa6b8; --line:#2e3746;
+  --accent:#f0a04b; --accent-ink:#1a1206; --live:#5cc2ab; color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--display);font-size:17px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding:24px 16px 56px;display:flex;flex-direction:column;gap:32px}
+a{color:inherit}
+.back{align-self:flex-start;font:600 14px var(--mono);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.back:hover,.back:focus-visible{border-color:var(--accent)}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{margin:4px 0 8px;font-size:clamp(32px,7vw,48px);line-height:1.05;text-wrap:balance}
+h2{margin:0 0 12px;font-size:22px}
+p{margin:0;max-width:62ch}
+.lead{font-size:19px;color:var(--muted)}
+/* gryf jako ozdobnik: 6 strun, progi */
+.neck{height:64px;border-radius:10px;background:
+  repeating-linear-gradient(90deg,transparent 0 58px,var(--line) 58px 61px),
+  var(--panel);border:1px solid var(--line);position:relative;overflow:hidden}
+.neck i{position:absolute;left:0;right:0;height:1px;background:var(--muted);opacity:.5}
+.neck b{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--accent);transform:translate(-50%,-50%)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;text-decoration:none}
+a.card:hover,a.card:focus-visible{border-color:var(--accent)}
+.card strong{font-size:22px}
+.card span{color:var(--muted)}
+.tag{align-self:flex-start;font:600 12px var(--mono);background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 10px}
+.meta{font:500 13px var(--mono)}
+ol{margin:0;padding-left:22px;max-width:62ch}
+ol li+li{margin-top:6px}
+footer{color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:12px}
+</style>
 </head>
 
 <body>
-    <a class="wstecz" href="../">← Strona główna</a>
+<div class="wrap">
+  <a class="back" href="../">← Strona główna</a>
 
-    <header class="naglowek">
-        <p class="prompt">&gt; cd gitara<span class="kursor">_</span></p>
-        <h1>Nauka gry na gitarze</h1>
-        <p class="podtytul">Uczę się grać na gitarze od zera. Tu zbieram ćwiczenia z kursu i podkłady, które grają za resztę zespołu, żebym mógł ćwiczyć tak, jakbym grał z kapelą.</p>
-    </header>
+  <header>
+    <div class="label">Seraphexe · gitara</div>
+    <h1>Nauka gry na gitarze</h1>
+    <p class="lead">Uczę się grać na gitarze od zera. Moim celem jest granie ulubionych piosenek.</p>
+  </header>
 
-    <main>
-        <section>
-            <h2>Podkłady do ćwiczeń</h2>
-            <div class="karty">
-                <a class="karta" href="ale-jazz.html">
-                    <span class="status gotowe">działa</span>
-                    <strong>Ale jazz</strong>
-                    <span>Ćwiczenie na jednej strunie. Perkusja, bas i klawisze w pętli 4 taktów, z regulacją tempa i odliczaniem.</span>
-                    <span class="technologie">JavaScript · Web Audio</span>
-                </a>
-            </div>
-        </section>
+  <div class="neck" aria-hidden="true">
+    <i style="top:12%"></i><i style="top:27%"></i><i style="top:42%"></i><i style="top:57%"></i><i style="top:72%"></i><i style="top:87%"></i>
+    <b style="left:calc(61px*3.5);top:12%"></b><b style="left:calc(61px*5.5);top:12%"></b><b style="left:calc(61px*7.5);top:12%"></b>
+  </div>
 
-        <section>
-            <h2>Jak korzystać</h2>
-            <p>Wybierz podkład, ustaw wolne tempo i kliknij „Graj”. Po odliczaniu wchodzi zespół, a Ty grasz swoją partię z kursu. Gdy idzie bez błędów, podkręć tempo.</p>
-        </section>
-    </main>
+  <section>
+    <h2>O co chodzi</h2>
+    <p>Na początku nauki grasz proste melodie, często na jednej strunie. Sama melodia brzmi jednak pusto, a trudno trzymać równy rytm bez nikogo obok. Dlatego robię podkłady, które grają za resztę zespołu: perkusję, bas i klawisze. Ja gram swoją partię z kursu, a podkład trzyma tempo i daje poczucie grania z kapelą.</p>
+  </section>
 
-    <footer class="stopka">
-        <p>Do powstania mojej twórczości używam AI.</p>
-    </footer>
+  <section>
+    <h2>Podkłady do ćwiczeń</h2>
+    <div class="cards">
+      <a class="card" href="ale-jazz.html">
+        <span class="tag">działa</span>
+        <strong>Ale jazz</strong>
+        <span>Ćwiczenie na jednej strunie. Pętla 4 taktów z perkusją, basem i klawiszami.</span>
+        <span class="meta">struna E · 60–130 BPM</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Jak ćwiczę</h2>
+    <ol>
+      <li>Najpierw gram ćwiczenie powoli, bez podkładu, aż palce wiedzą, gdzie iść.</li>
+      <li>Potem włączam podkład w tempie 60 BPM, tylko z perkusją i metronomem.</li>
+      <li>Gdy przejdę całą pętlę kilka razy bez błędu, dokładam bas i klawisze.</li>
+      <li>Podnoszę tempo o 5 BPM, aż dojdę do tempa oryginału.</li>
+    </ol>
+  </section>
+
+  <footer>Do powstania mojej twórczości używam AI.</footer>
+</div>
 </body>
 
 </html>

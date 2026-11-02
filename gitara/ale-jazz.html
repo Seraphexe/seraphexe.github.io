@@ -63,6 +63,14 @@ h1{margin:0;font-size:clamp(28px,6vw,40px);line-height:1.1;text-wrap:balance}
 select{font:600 14px var(--display);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
 .back{align-self:flex-start;font:600 14px var(--mono);color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
 .back:hover{border-color:var(--accent)}
+.guide{display:flex;flex-direction:column;gap:14px}
+.guide h2{margin:0;font-size:22px}
+.guide p{margin:0;max-width:65ch}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.step b{font-size:17px}
+.step span{color:var(--muted);font-size:15px}
+.fret{font:700 14px var(--mono);color:var(--accent)}
 .tips{color:var(--muted);font-size:15px;max-width:65ch;margin:0;padding-left:18px}
 .tips li+li{margin-top:4px}
 @media (max-width:480px){.bars{grid-template-columns:repeat(2,1fr)}}
@@ -115,6 +123,20 @@ select{font:600 14px var(--display);background:var(--panel);color:var(--ink);bor
         <option value="1">Fm – D♭ – A♭ – E♭</option>
       </select>
     </label>
+  </section>
+
+  <section class="guide">
+    <h2>O co chodzi</h2>
+    <p>To podkład do ćwiczenia z kursu gitary: krótka melodia z piosenki „Ale jazz” zagrana na jednej strunie. Zespół gra akordy, bas i perkusję w pętli 4 taktów, a Ty grasz melodię z tabulatury. Takt 1 podkładu to takt 1 na Twoim rysunku.</p>
+    <h2>Jak to grać</h2>
+    <div class="steps">
+      <div class="step"><span class="fret">struna</span><b>Najcieńsza struna E</b><span>Cała melodia jest na jednej strunie: najcieńszej, najbliżej podłogi, gdy trzymasz gitarę. Cyfra w tabulaturze to numer progu.</span></div>
+      <div class="step"><span class="fret">4 i 6</span><b>Palec wskazujący i serdeczny</b><span>Wskazujący stoi na 4. progu, serdeczny na 6. Tak zagrasz cały pierwszy takt bez ruszania ręką.</span></div>
+      <div class="step"><span class="fret">6, 8, 9</span><b>Przesuń rękę</b><span>Gdy pojawia się 8, przesuń dłoń o dwa progi: wskazujący na 6, serdeczny na 8, mały palec na 9. Kiedy wracają 4 i 6, cofnij dłoń na poprzednie miejsce.</span></div>
+      <div class="step"><span class="fret">dociskanie</span><b>Tuż przy metalowym pręciku</b><span>Dociskaj strunę blisko progu, a nie na środku pola. Dźwięk będzie czysty i nie zabrzęczy.</span></div>
+      <div class="step"><span class="fret">kostka</span><b>Równe uderzenia w dół</b><span>Na początek uderzaj każdy dźwięk w dół. Powtarzane dźwięki (np. kilka razy ten sam próg) grasz, nie puszczając palca lewej ręki.</span></div>
+      <div class="step"><span class="fret">rytm</span><b>Posłuchaj oryginału</b><span>Tabulatura nie pokazuje rytmu. Posłuchaj refrenu piosenki i zanuć melodię, zanim ją zagrasz. Na rysunku przed pierwszym dźwiękiem jest przerwa, więc nie wchodź od razu na „raz”.</span></div>
+    </div>
   </section>
 
   <ul class="tips">
