@@ -61,6 +61,8 @@ h1{margin:0;font-size:clamp(28px,6vw,40px);line-height:1.1;text-wrap:balance}
 .opts label{display:flex;gap:8px;align-items:center;cursor:pointer}
 .opts input{accent-color:var(--accent);width:18px;height:18px}
 select{font:600 14px var(--display);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.back{align-self:flex-start;font:600 14px var(--mono);color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.back:hover{border-color:var(--accent)}
 .tips{color:var(--muted);font-size:15px;max-width:65ch;margin:0;padding-left:18px}
 .tips li+li{margin-top:4px}
 @media (max-width:480px){.bars{grid-template-columns:repeat(2,1fr)}}
@@ -71,6 +73,7 @@ select{font:600 14px var(--display);background:var(--panel);color:var(--ink);bor
 <body>
 
 <div class="wrap">
+  <a class="back" href="./">← Nauka gry na gitarze</a>
   <header>
     <div class="label">Ćwiczenie na strunie E (najcieńszej)</div>
     <h1>Ale jazz — podkład zespołu</h1>
